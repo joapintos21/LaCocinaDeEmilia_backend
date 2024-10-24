@@ -1,0 +1,13 @@
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/Main.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/config/AppBootstrap.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/config/AppControllerConfig.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/config/DbConfig.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/config/FreeMarkerConfig.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/controllers/BooksController.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/controllers/GreetingController.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/controllers/HomeController.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/controllers/RequestContextFilter.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/models/Book.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/services/Greeter.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/services/GreeterImpl.java
+/Users/pedrobonilla/Personal/ORT/LaCocinaDeEmilia_backend/src/main/java/app/services/GreeterModule.java

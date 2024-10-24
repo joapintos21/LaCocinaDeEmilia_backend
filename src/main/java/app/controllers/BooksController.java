@@ -24,56 +24,57 @@ import app.models.Book;
 /**
  * @author Igor Polevoy
  */
-public class BooksController extends AppController {                
+public class BooksController extends AppController {
 
-    public void index(){
+    public void index() {
 
-        if("xml".equals(format())){
+        if ("xml".equals(format())) {
             render().noLayout().contentType("text/xml");
         }
 
-        if("json".equals(format())){
+        if ("json".equals(format())) {
             render().noLayout().contentType("application/json");
         }
 
         view("books", Book.findAll().toMaps());
     }
 
-    public void show(){
-        //this is to protect from URL hacking
-        Book b = (Book) Book.findById(getId());
-        if(b != null){
+    public void show() {
+        // this is to protect from URL hacking
+        Book b = (Book) Book.findById(Integer.parseInt(getId()));
+        if (b != null) {
             view("book", b);
-        }else{
+        } else {
             view("message", "are you trying to hack the URL?");
             render("/system/404");
         }
     }
-    
+
     @POST
-    public void create(){
+    public void create() {
         Book book = new Book();
         book.fromMap(params1st());
-        if(!book.save()){
+        if (!book.save()) {
             flash("message", "Something went wrong, please  fill out all fields");
             flash("errors", book.errors());
             flash("params", params1st());
             redirect(BooksController.class, "new_form");
-        }else{
+        } else {
             flash("message", "New book was added: " + book.get("title"));
             redirect(BooksController.class);
         }
     }
 
     @DELETE
-    public void delete(){
+    public void delete() {
 
-        Book b = (Book)Book.findById(getId());
+        Book b = (Book) Book.findById(Integer.parseInt(getId()));
         String title = b.getString("title");
         b.delete();
         flash("message", "Book: '" + title + "' was deleted");
         redirect(BooksController.class);
     }
 
-    public void newForm(){}
+    public void newForm() {
+    }
 }
