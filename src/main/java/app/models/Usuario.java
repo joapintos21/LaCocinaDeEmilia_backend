@@ -14,20 +14,15 @@ public class Usuario extends Model {
     private static final long EXPIRATION_TIME = 86400000; // 1 día en milisegundos
 
     static {
-        validatePresenceOf("email", "password", "nombre", "telefono");
+        validatePresenceOf("email", "password", "nombre", "telefono", "rol_id");
     }
 
-    public void assignRol(String rolNombre) {
-        Rol rol = Rol.findFirst("nombre = ?", rolNombre);
-        if (rol == null) {
-            rol = new Rol();
-            rol.set("nombre", rolNombre);
-            rol.saveIt();
-        }
+    public void assignRol(Integer rolId) {
+        Rol rol = Rol.findById(rolId);
         set("rol_id", rol.getId());
         saveIt();
 
-        if (rolNombre.equals("Cliente")) {
+        if (rolId == 4) {
             ensureClienteRecord();
         }
     }

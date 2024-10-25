@@ -1,9 +1,15 @@
 package app.controllers;
 
 import app.models.Usuario;
+
+import java.util.List;
+
 import org.javalite.activeweb.AppController;
+import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.POST;
 import org.javalite.activeweb.annotations.PUT;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class UsuariosController extends AppController {
 
@@ -12,9 +18,9 @@ public class UsuariosController extends AppController {
     public void create(Usuario user) {
         user.setPassword(user.getString("password"));
         if (user.save()) {
-            String rolNombre = user.getString("rol"); // Suponiendo que el rol viene con el usuario
-            if (rolNombre != null && !rolNombre.isEmpty()) {
-                user.assignRol(rolNombre); // Asigna el rol al usuario
+            Integer rolId = user.getInteger("rol_id"); // Suponiendo que el rol viene con el usuario
+            if (rolId != null && rolId != 0) {
+                user.assignRol(rolId); // Asigna el rol al usuario
             }
             respond(user.toJson(true)).status(200); // Devolver el usuario creado
         } else {
@@ -36,14 +42,48 @@ public class UsuariosController extends AppController {
             }
 
             if (usuario.save()) {
-                String rolNombre = newUser.getString("rol"); // Verifica si se envió un rol
-                if (rolNombre != null && !rolNombre.isEmpty()) {
-                    usuario.assignRol(rolNombre); // Actualiza el rol del usuario
+                Integer rolId = newUser.getInteger("rol_id"); // Suponiendo que el rol viene con el usuario
+                if (rolId != null && rolId != 0) {
+                    usuario.assignRol(rolId); // Asigna el rol al usuario
                 }
                 respond(usuario.toJson(true)).status(200); // Devolver el usuario actualizado
             } else {
                 respond(usuario.errors().toString()).status(400);
             }
+        } else {
+            respond("Usuario no encontrado").status(404);
+        }
+    }
+
+    // Obtener todos los usuarios
+    @GET
+    public void index() {
+        List<Usuario> usuarios = Usuario.findAll();
+        JSONArray jsonArray = new JSONArray();
+
+        // Crear un JSONObject solo con los atributos deseados
+
+        usuarios.forEach(usuario -> {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("id", usuario.get("id"));
+            jsonObject.put("nombre", usuario.get("nombre"));
+            jsonObject.put("email", usuario.get("email"));
+            jsonObject.put("telefono", usuario.get("telefono"));
+            jsonArray.put(jsonObject);
+        });
+        String json = jsonArray.toString();
+        respond(json);
+    }
+
+    // Obtener un usuario por ID
+    @GET
+    public void show() {
+
+        int id = Integer.parseInt(param("id"));
+        Usuario usuario = Usuario.findById(id);
+
+        if (usuario != null) {
+            respond(usuario.toJson(true)).status(200);
         } else {
             respond("Usuario no encontrado").status(404);
         }
