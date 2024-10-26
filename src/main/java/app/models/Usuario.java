@@ -24,8 +24,17 @@ public class Usuario extends Model {
         set("rol_id", rol.getId());
         saveIt();
 
-        if (rolId == 4) {
-            ensureClienteRecord();
+        switch (rolId) {
+            case 4: // Rol ID 4 es "Cliente"
+                ensureClienteRecord();
+                break;
+            case 5: // Rol ID 5 es "Nutricionista"
+                ensureNutricionistaRecord();
+                break;
+            // Puedes agregar otros roles en futuros casos aquí
+            default:
+                // Opcional: Manejar casos en que el rol no requiera acción específica
+                break;
         }
     }
 
@@ -35,6 +44,20 @@ public class Usuario extends Model {
             Cliente cliente = new Cliente();
             cliente.set("usuario_id", this.getId());
             cliente.saveIt();
+        }
+    }
+
+    // Método para crear el registro en la tabla Nutricionista si no existe
+    private void ensureNutricionistaRecord() {
+        // Asegurar que el usuario también es cliente
+        ensureClienteRecord();
+        Cliente cliente = Cliente.findFirst("usuario_id = ?", this.getId());
+
+        if (Nutricionista.where("cliente_id = ?", cliente.getId()).isEmpty()) {
+            Nutricionista nutricionista = new Nutricionista();
+            nutricionista.set("cliente_id", cliente.getId());
+            nutricionista.set("saldo", 0.0);
+            nutricionista.saveIt();
         }
     }
 
@@ -69,7 +92,7 @@ public class Usuario extends Model {
                     .getSubject();
 
             // Convertir userId a Integer
-            Integer userId = Integer.parseInt(userIdStr);\
+            Integer userId = Integer.parseInt(userIdStr);
             return Usuario.findById(userId);
         } catch (NumberFormatException e) {
             System.out.println("El userId no es un número válido: " + e.getMessage());
