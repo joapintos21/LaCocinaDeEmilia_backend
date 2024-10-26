@@ -2,11 +2,10 @@ package app.models;
 
 import org.javalite.activejdbc.Model;
 import org.javalite.activejdbc.annotations.Table;
+import org.json.JSONObject;
 import org.mindrot.jbcrypt.BCrypt;
-
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-
 import java.util.Base64;
 import java.util.Date;
 
@@ -20,11 +19,26 @@ public class Usuario extends Model {
     }
 
     public void assignRol(Integer rolId) {
-        Rol rol = Rol.findById(rolId);
-        set("rol_id", rol.getId());
+        // Obtener el rol actual del usuario
+        Integer currentRolId = getInteger("rol_id");
+        // Si el rol actual es diferente al nuevo rol, eliminar el registro del rol
+        // anterior
+        if (currentRolId != null && !currentRolId.equals(rolId)) {
+            clearPreviousRole();
+        }
+        set("rol_id", rolId);
         saveIt();
 
         switch (rolId) {
+            case 1: // Rol ID 1 es "Administrador"
+                ensureAdministradorRecord();
+                break;
+            case 2: // Rol ID 2 es "Cocinero"
+                ensureCocineroRecord();
+                break;
+            case 3: // Rol ID 3 es "Cadete"
+                ensureCadeteRecord();
+                break;
             case 4: // Rol ID 4 es "Cliente"
                 ensureClienteRecord();
                 break;
@@ -35,6 +49,33 @@ public class Usuario extends Model {
             default:
                 // Opcional: Manejar casos en que el rol no requiera acción específica
                 break;
+        }
+    }
+
+    // Método para crear el registro en la tabla Administrador si no existe
+    private void ensureAdministradorRecord() {
+        if (Administrador.where("usuario_id = ?", this.getId()).isEmpty()) {
+            Administrador admin = new Administrador();
+            admin.set("usuario_id", this.getId());
+            admin.saveIt();
+        }
+    }
+
+    // Método para crear el registro en la tabla Cocinero si no existe
+    private void ensureCocineroRecord() {
+        if (Cocinero.where("usuario_id = ?", this.getId()).isEmpty()) {
+            Cocinero cocinero = new Cocinero();
+            cocinero.set("usuario_id", this.getId());
+            cocinero.saveIt();
+        }
+    }
+
+    // Método para crear el registro en la tabla Cadete si no existe
+    private void ensureCadeteRecord() {
+        if (Cadete.where("usuario_id = ?", this.getId()).isEmpty()) {
+            Cadete cadete = new Cadete();
+            cadete.set("usuario_id", this.getId());
+            cadete.saveIt();
         }
     }
 
@@ -52,12 +93,27 @@ public class Usuario extends Model {
         // Asegurar que el usuario también es cliente
         ensureClienteRecord();
         Cliente cliente = Cliente.findFirst("usuario_id = ?", this.getId());
-
         if (Nutricionista.where("cliente_id = ?", cliente.getId()).isEmpty()) {
             Nutricionista nutricionista = new Nutricionista();
             nutricionista.set("cliente_id", cliente.getId());
             nutricionista.set("saldo", 0.0);
             nutricionista.saveIt();
+        }
+    }
+
+    // Método para eliminar registros del rol anterior
+    private void clearPreviousRole() {
+        Integer userId = getInteger("id");
+
+        // Eliminar registros en las tablas de roles específicos si existen
+        Administrador.delete("usuario_id = ?", userId);
+        Cocinero.delete("usuario_id = ?", userId);
+        Cadete.delete("usuario_id = ?", userId);
+        // Eliminar registros en Cliente y Nutricionista si existe como Nutricionista
+        Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
+        if (cliente != null) {
+            Nutricionista.delete("cliente_id = ?", cliente.getId());
+            cliente.delete(); // Finalmente, elimina el registro de Cliente
         }
     }
 
@@ -101,5 +157,15 @@ public class Usuario extends Model {
             System.out.println("Error de verificación del token: " + e.getMessage());
             return null; // Token inválido o expirado
         }
+    }
+
+    public JSONObject formatoJSON() {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("id", get("id"));
+        jsonObject.put("nombre", get("nombre"));
+        jsonObject.put("email", get("email"));
+        jsonObject.put("telefono", get("telefono"));
+        jsonObject.put("rol", Rol.findById(get("rol_id")).get("nombre")); // Añadir el nombre del rol
+        return jsonObject;
     }
 }
