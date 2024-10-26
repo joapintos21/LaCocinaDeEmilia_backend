@@ -55,7 +55,7 @@ CREATE TABLE gestion_usuarios.Cliente (
 CREATE TABLE gestion_usuarios.Nutricionista (
     id SERIAL PRIMARY KEY,
     saldo NUMERIC(10,2),
-    usuario_id INT REFERENCES gestion_usuarios.Cliente(id) ON DELETE CASCADE
+    cliente_id INT REFERENCES gestion_usuarios.Cliente(id) ON DELETE CASCADE
 );
 
 -- Tabla Direccion

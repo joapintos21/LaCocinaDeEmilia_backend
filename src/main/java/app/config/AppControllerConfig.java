@@ -29,7 +29,7 @@ import org.javalite.activeweb.controller_filters.DBConnectionFilter;
 public class AppControllerConfig extends AbstractControllerConfig {
 
     public void init(AppContext context) {
-        add(new RequestContextFilter(), new DBConnectionFilter()).to(UsuariosController.class);
+        add(new RequestContextFilter(), new DBConnectionFilter(), new JWTFilter()).to(UsuariosController.class);
         add(new RequestContextFilter(), new DBConnectionFilter()).to(LoginController.class);
     }
 }

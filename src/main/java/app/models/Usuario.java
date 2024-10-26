@@ -3,14 +3,16 @@ package app.models;
 import org.javalite.activejdbc.Model;
 import org.javalite.activejdbc.annotations.Table;
 import org.mindrot.jbcrypt.BCrypt;
+
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+import java.util.Base64;
 import java.util.Date;
 
 @Table("gestion_usuarios.Usuario")
 public class Usuario extends Model {
-    private static final String SECRET_KEY = "your_super_secret_key"; // Usar una clave segura en producción
+    private static final String SECRET_KEY = Base64.getEncoder().encodeToString("secret_key_jwt_token".getBytes());
     private static final long EXPIRATION_TIME = 86400000; // 1 día en milisegundos
 
     static {
@@ -60,14 +62,20 @@ public class Usuario extends Model {
     // Verificar JWT
     public static Usuario verifyJwt(String token) {
         try {
-            String userId = Jwts.parser()
+            String userIdStr = Jwts.parser()
                     .setSigningKey(SECRET_KEY)
                     .parseClaimsJws(token)
                     .getBody()
                     .getSubject();
 
+            // Convertir userId a Integer
+            Integer userId = Integer.parseInt(userIdStr);\
             return Usuario.findById(userId);
+        } catch (NumberFormatException e) {
+            System.out.println("El userId no es un número válido: " + e.getMessage());
+            return null;
         } catch (Exception e) {
+            System.out.println("Error de verificación del token: " + e.getMessage());
             return null; // Token inválido o expirado
         }
     }
