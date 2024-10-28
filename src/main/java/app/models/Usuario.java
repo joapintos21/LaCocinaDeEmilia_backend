@@ -1,5 +1,6 @@
 package app.models;
 
+import org.javalite.activejdbc.Base;
 import org.javalite.activejdbc.Model;
 import org.javalite.activejdbc.annotations.Table;
 import org.json.JSONObject;
@@ -18,37 +19,41 @@ public class Usuario extends Model {
         validatePresenceOf("email", "password", "nombre", "telefono", "rol_id");
     }
 
-    public void assignRol(Integer rolId) {
+    public void assignRol(Integer rolId, Integer currentRolId) {
         // Obtener el rol actual del usuario
-        Integer currentRolId = getInteger("rol_id");
         // Si el rol actual es diferente al nuevo rol, eliminar el registro del rol
         // anterior
         if (currentRolId != null && !currentRolId.equals(rolId)) {
             clearPreviousRole();
         }
-        set("rol_id", rolId);
-        saveIt();
-
-        switch (rolId) {
-            case 1: // Rol ID 1 es "Administrador"
-                ensureAdministradorRecord();
-                break;
-            case 2: // Rol ID 2 es "Cocinero"
-                ensureCocineroRecord();
-                break;
-            case 3: // Rol ID 3 es "Cadete"
-                ensureCadeteRecord();
-                break;
-            case 4: // Rol ID 4 es "Cliente"
-                ensureClienteRecord();
-                break;
-            case 5: // Rol ID 5 es "Nutricionista"
-                ensureNutricionistaRecord();
-                break;
-            // Puedes agregar otros roles en futuros casos aquí
-            default:
-                // Opcional: Manejar casos en que el rol no requiera acción específica
-                break;
+        try {
+            Base.openTransaction();
+            switch (rolId) {
+                case 1: // Rol ID 1 es "Administrador"
+                    ensureAdministradorRecord();
+                    break;
+                case 2: // Rol ID 2 es "Cocinero"
+                    ensureCocineroRecord();
+                    break;
+                case 3: // Rol ID 3 es "Cadete"
+                    ensureCadeteRecord();
+                    break;
+                case 4: // Rol ID 4 es "Cliente"
+                    ensureClienteRecord();
+                    break;
+                case 5: // Rol ID 5 es "Nutricionista"
+                    ensureNutricionistaRecord();
+                    break;
+                // Puedes agregar otros roles en futuros casos aquí
+                default:
+                    // Opcional: Manejar casos en que el rol no requiera acción específica
+                    break;
+            }
+            Base.commitTransaction();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            Base.rollbackTransaction();
+            throw e;
         }
     }
 

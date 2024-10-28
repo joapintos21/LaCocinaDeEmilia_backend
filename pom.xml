@@ -57,10 +57,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.4</version>
+                <version>3.8.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -88,16 +88,18 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
-                <version>9.4.17.v20190418</version>
+                <version>9.4.34.v20201102</version>
                 <configuration>
                     <httpConnector>
                         <port>8080</port>
                     </httpConnector>
-
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <jvmArgs>
+                        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
+                    </jvmArgs>
                     <systemProperties>
                         <systemProperty>
                             <name>active_reload</name>
