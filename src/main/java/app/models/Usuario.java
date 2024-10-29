@@ -13,7 +13,7 @@ import java.util.Date;
 @Table("gestion_usuarios.Usuario")
 public class Usuario extends Model {
     private static final String SECRET_KEY = Base64.getEncoder().encodeToString("secret_key_jwt_token".getBytes());
-    private static final long EXPIRATION_TIME = 86400000; // 1 día en milisegundos
+    private static final long EXPIRATION_TIME = 604800000; // 7 dias en milisegundos
 
     static {
         validatePresenceOf("email", "password", "nombre", "telefono", "rol_id");
