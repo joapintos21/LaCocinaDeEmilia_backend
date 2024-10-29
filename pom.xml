@@ -9,7 +9,6 @@
     <name>La Cocina De Emilia</name>
 
     <properties>
-        <environments>development</environments>
         <javalite.version>3.5-j11</javalite.version>
     </properties>
 
@@ -17,16 +16,30 @@
         <profile>
             <id>development</id>
             <activation>
+                <property>
+                    <name>env</name>
+                    <value>development</value>
+                </property>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
+                <environment>Development</environment>
+                <environments>development</environments>
                 <appender-name>CONSOLE</appender-name>
             </properties>
         </profile>
-
+        
         <profile>
-            <id>file_log</id>
+            <id>production</id>
+            <activation>
+                <property>
+                    <name>env</name>
+                    <value>production</value>
+                </property>
+            </activation>
             <properties>
+                <environment>Production</environment>
+                <environments>production</environments>
                 <appender-name>FILE</appender-name>
             </properties>
         </profile>
