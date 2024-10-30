@@ -19,13 +19,23 @@ public class Usuario extends Model {
         validatePresenceOf("email", "password", "nombre", "telefono", "rol_id");
     }
 
-    public void assignRol(Integer rolId, Integer currentRolId) {
-        // Obtener el rol actual del usuario
-        // Si el rol actual es diferente al nuevo rol, eliminar el registro del rol
-        // anterior
-        if (currentRolId != null && !currentRolId.equals(rolId)) {
-            clearPreviousRole();
+    // Métodos actuales...
+
+    // Método para obtener el estado
+    public String getStatus() {
+        return getString("status");
+    }
+
+    // Método para establecer el estado
+    public void setStatus(String status) {
+        if (status.equals("activo") || status.equals("pendiente") || status.equals("inactivo")) {
+            set("status", status);
+        } else {
+            throw new IllegalArgumentException("Estado no válido. Debe ser 'activo', 'pendiente' o 'inactivo'.");
         }
+    }
+
+    public void assignRol(Integer rolId) {
         try {
             Base.openTransaction();
             switch (rolId) {
@@ -103,22 +113,6 @@ public class Usuario extends Model {
             nutricionista.set("cliente_id", cliente.getId());
             nutricionista.set("saldo", 0.0);
             nutricionista.saveIt();
-        }
-    }
-
-    // Método para eliminar registros del rol anterior
-    private void clearPreviousRole() {
-        Integer userId = getInteger("id");
-
-        // Eliminar registros en las tablas de roles específicos si existen
-        Administrador.delete("usuario_id = ?", userId);
-        Cocinero.delete("usuario_id = ?", userId);
-        Cadete.delete("usuario_id = ?", userId);
-        // Eliminar registros en Cliente y Nutricionista si existe como Nutricionista
-        Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
-        if (cliente != null) {
-            Nutricionista.delete("cliente_id = ?", cliente.getId());
-            cliente.delete(); // Finalmente, elimina el registro de Cliente
         }
     }
 
