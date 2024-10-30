@@ -109,14 +109,14 @@
                     <httpConnector>
                         <port>8080</port>
                     </httpConnector>
-                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <scanIntervalSeconds>0</scanIntervalSeconds> <!-- Desactiva la recarga automática -->
                     <jvmArgs>
                         -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
                     </jvmArgs>
                     <systemProperties>
                         <systemProperty>
                             <name>active_reload</name>
-                            <value>true</value>
+                            <value>false</value> <!-- Cambia a "false" para evitar la recarga activa -->
                         </systemProperty>
                         <systemProperty>
                             <name>activejdbc.log</name>
@@ -127,10 +127,8 @@
                             <value>true</value>
                         </systemProperty>
                     </systemProperties>
-
                 </configuration>
-           </plugin>
-
+            </plugin>
 
             <plugin>
                 <groupId>org.javalite</groupId>
