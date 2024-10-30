@@ -26,15 +26,6 @@ public class Usuario extends Model {
         return getString("status");
     }
 
-    // Método para establecer el estado
-    public void setStatus(String status) {
-        if (status.equals("activo") || status.equals("pendiente") || status.equals("inactivo")) {
-            set("status", status);
-        } else {
-            throw new IllegalArgumentException("Estado no válido. Debe ser 'activo', 'pendiente' o 'inactivo'.");
-        }
-    }
-
     public void assignRol(Integer rolId) {
         try {
             Base.openTransaction();
