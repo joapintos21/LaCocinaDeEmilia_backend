@@ -2,6 +2,8 @@ package app.controllers;
 
 import app.models.Usuario;
 import java.util.List;
+import java.util.Map;
+
 import org.javalite.activejdbc.Base;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
@@ -19,7 +21,7 @@ public class UsuariosController extends AppController {
         if (user.save()) {
             Integer rolId = user.getInteger("rol_id"); // Suponiendo que el rol viene con el usuario
             if (rolId != null && rolId != 0) {
-                user.assignRol(rolId, null); // Asigna el rol al usuario
+                user.assignRol(rolId); // Asigna el rol al usuario
             }
             respond(user.formatoJSON().toString()).contentType("application/json").status(200);
         } else {
@@ -36,12 +38,11 @@ public class UsuariosController extends AppController {
         if (usuario != null) {
             try {
                 Base.openTransaction();
-
-                // Captura el rol actual antes de sobrescribir con fromMap
-                Integer currentRolId = usuario.getInteger("rol_id");
-
-                // Copia los atributos de newUser en usuario
-                usuario.fromMap(newUser.toMap());
+                // Guarda el rol actual
+                // Copia los atributos de newUser en usuario sin rol_id
+                Map<String, Object> userAttributes = newUser.toMap();
+                userAttributes.remove("rol_id"); // Remueve rol_id para evitar cambios
+                usuario.fromMap(userAttributes);
 
                 // Si el campo "password" en newUser no es nulo ni vacío, lo actualizamos
                 String password = newUser.getString("password");
@@ -49,12 +50,6 @@ public class UsuariosController extends AppController {
                     usuario.setPassword(password);
                 }
 
-                // Verificamos si rol_id cambió y actualizamos si es necesario
-                Integer newRolId = usuario.getInteger("rol_id");
-                if (newRolId != null && !newRolId.equals(currentRolId)) {
-                    usuario.assignRol(newRolId, currentRolId); // Asigna el nuevo rol al usuario
-                }
-                System.out.println(usuario);
                 if (usuario.saveIt()) {
                     Base.commitTransaction();
                     respond(usuario.formatoJSON().toString()).contentType("application/json").status(200);
