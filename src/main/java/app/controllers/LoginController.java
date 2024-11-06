@@ -11,14 +11,20 @@ public class LoginController extends AppController {
     public void iniciarSesion() {
         String email = param("email");
         String password = param("password");
+        String responseJson = "";
 
         Usuario usuario = Usuario.findFirst("email = ?", email);
 
         if (usuario != null && usuario.checkPassword(password)) {
             String token = usuario.generateJwt();
-            respond("{\"token\": \"" + token + "\"}").contentType("application/json").status(200);
+
+            // Construir el JSON de respuesta
+            responseJson = "{ \"token\": \"" + token + "\", \"usuario\": " + usuario.formatoJSON() + " }";
+
+            respond(responseJson).contentType("application/json").status(200);
         } else {
-            respond("Email o contraseña incorrectos").status(401);
+            responseJson = "{ \"error\": \"Email o contraseña incorrectos\"}";
+            respond(responseJson).contentType("application/json").status(401);
         }
     }
 }

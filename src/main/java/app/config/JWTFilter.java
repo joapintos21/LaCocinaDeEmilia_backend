@@ -8,7 +8,7 @@ public class JWTFilter extends HttpSupportFilter {
     @Override
     public void before() {
         // Verifica si el método es el que deseas omitir
-        if (path().endsWith("/usuarios/create")) {
+        if (path().endsWith("/usuarios/create") || path().endsWith("/usuarios/validarToken")) {
             return;
         }
         // Obtener el token desde el encabezado Authorization

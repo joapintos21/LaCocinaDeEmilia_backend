@@ -1,6 +1,8 @@
 package app.controllers;
 
 import app.models.Usuario;
+import app.services.EmailService;
+
 import java.util.List;
 import java.util.Map;
 
@@ -17,15 +19,51 @@ public class UsuariosController extends AppController {
     // Crear un nuevo usuario con un rol
     @POST
     public void create(Usuario user) {
-        user.setPassword(user.getString("password"));
-        if (user.save()) {
-            Integer rolId = user.getInteger("rol_id"); // Suponiendo que el rol viene con el usuario
-            if (rolId != null && rolId != 0) {
-                user.assignRol(rolId); // Asigna el rol al usuario
+        try {
+            user.setPassword(user.getString("password"));
+
+            if (user.save()) {
+                Integer rolId = user.getInteger("rol_id"); // Suponiendo que el rol viene con el usuario
+                if (rolId != null && rolId != 0) {
+                    user.assignRol(rolId); // Asigna el rol al usuario
+                }
+                String token = user.generateJwtValidation();
+                String validationLink = "http://localhost:3000/verificar?token=" + token;
+
+                EmailService emailService = new EmailService();
+                // Contenido del email en HTML
+                String contentText = String.format(
+                        "<p>Hola %s,</p><p>Gracias por registrarte en nuestra aplicación. " +
+                                "Por favor, confirma tu cuenta haciendo clic en el siguiente enlace:</p>" +
+                                "<a href='%s'>Confirma tu cuenta</a><p>¡Gracias!</p>",
+                        user.get("nombre"), validationLink);
+
+                emailService.sendTestEmail(
+                        user.getString("email"),
+                        "Validación de cuenta",
+                        contentText);
+
+                respond(user.formatoJSON().toString()).contentType("application/json").status(200);
+            } else {
+                // Construir una respuesta JSON con los errores de validación
+                String errorJson = "{\"error\": " + user.errors().toJSON() + "}";
+                respond(errorJson).contentType("application/json").status(400); // Devuelve un código de estado 400 para
+                                                                                // indicar error
             }
-            respond(user.formatoJSON().toString()).contentType("application/json").status(200);
-        } else {
-            respond(user.errors().toString()).status(400);
+        } catch (Exception e) {
+            // Capturar la excepción y devolver un mensaje de error JSON
+            String errorMessage = e.getMessage();
+
+            // Opcionalmente, puedes filtrar el mensaje para obtener detalles específicos
+            if (errorMessage.contains("usuario_email_key")) {
+                errorMessage = "El correo electrónico ya está registrado.";
+            }
+            if (errorMessage.contains("usuario_telefono_key")) {
+                errorMessage = "El teléfono ya está registrado.";
+            }
+
+            String errorJson = "{\"error\": \"" + errorMessage + "\"}";
+            respond(errorJson).contentType("application/json").status(422);
         }
     }
 
@@ -105,6 +143,33 @@ public class UsuariosController extends AppController {
             respond("Usuario eliminado correctamente").status(200);
         } else {
             respond("Usuario no encontrado").status(404);
+        }
+    }
+
+    @GET
+    public void validarToken() {
+        String token = param("token");
+
+        // Llamar al método verifyJwt para validar el token y obtener el usuario
+        Usuario user = Usuario.verifyJwt(token);
+        if (user == null) {
+            // Token inválido o expirado
+            respond("{\"error\": \"Token inválido o expirado.\"}").status(401);
+            return;
+        }
+
+        if (user != null && "pendiente".equals(user.get("status"))) {
+            // Actualizar el estado del usuario a activo
+            user.set("status", "activo");
+            user.save();
+
+            respond("{\"mensaje\": \"Cuenta verificada exitosamente\"}")
+                    .contentType("application/json")
+                    .status(200);
+        } else {
+            respond("{\"error\": \"Usuario no encontrado o ya verificado\"}")
+                    .contentType("application/json")
+                    .status(400);
         }
     }
 }

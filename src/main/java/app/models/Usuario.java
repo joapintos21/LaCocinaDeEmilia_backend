@@ -14,6 +14,7 @@ import java.util.Date;
 public class Usuario extends Model {
     private static final String SECRET_KEY = Base64.getEncoder().encodeToString("secret_key_jwt_token".getBytes());
     private static final long EXPIRATION_TIME = 604800000; // 7 dias en milisegundos
+    private static final long VALIDATION_EXPIRATION_TIME = 86400000; // 24hs en milisegundos
 
     static {
         validatePresenceOf("email", "password", "nombre", "telefono", "rol_id");
@@ -124,6 +125,16 @@ public class Usuario extends Model {
                 .setSubject(getString("id"))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
+                .compact();
+    }
+
+    // Generar JWT
+    public String generateJwtValidation() {
+        return Jwts.builder()
+                .setSubject(getString("id"))
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + VALIDATION_EXPIRATION_TIME))
                 .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
                 .compact();
     }

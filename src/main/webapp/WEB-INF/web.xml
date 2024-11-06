@@ -2,14 +2,23 @@
 <web-app xmlns="http://java.sun.com/xml/ns/javaee" version="2.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
-
     <display-name>activeweb</display-name>
 
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
 
+    <!-- Configuración del filtro CORS -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>app.config.CorsFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
+    <!-- Configuración del filtro dispatcher de ActiveWeb -->
     <filter>
         <filter-name>dispatcher</filter-name>
         <filter-class>org.javalite.activeweb.RequestDispatcher</filter-class>
@@ -22,8 +31,6 @@
             <param-value>home</param-value>
         </init-param>
     </filter>
-
-
     <filter-mapping>
         <filter-name>dispatcher</filter-name>
         <url-pattern>/*</url-pattern>
