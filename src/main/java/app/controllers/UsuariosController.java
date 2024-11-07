@@ -2,10 +2,8 @@ package app.controllers;
 
 import app.models.Usuario;
 import app.services.EmailService;
-
 import java.util.List;
 import java.util.Map;
-
 import org.javalite.activejdbc.Base;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;

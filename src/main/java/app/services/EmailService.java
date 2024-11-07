@@ -12,7 +12,7 @@ public class EmailService {
     private static final String SENDGRID_API_KEY = "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";
 
     public void sendTestEmail(String toEmail, String subject, String contentText) {
-        Email from = new Email("pbonilla091@gmail.com"); // Remitente temporal
+        Email from = new Email("gestion@lacocinadeemilia.com.uy");
         Email to = new Email(toEmail);
         Content content = new Content("text/html", contentText);
         Mail mail = new Mail(from, subject, to, content);
