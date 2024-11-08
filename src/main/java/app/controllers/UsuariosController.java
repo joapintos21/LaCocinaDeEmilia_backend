@@ -45,8 +45,7 @@ public class UsuariosController extends AppController {
             } else {
                 // Construir una respuesta JSON con los errores de validación
                 String errorJson = "{\"error\": " + user.errors().toJSON() + "}";
-                respond(errorJson).contentType("application/json").status(400); // Devuelve un código de estado 400 para
-                                                                                // indicar error
+                respond(errorJson).contentType("application/json").status(400); // Devuelve un código de estado 400
             }
         } catch (Exception e) {
             // Capturar la excepción y devolver un mensaje de error JSON
@@ -138,9 +137,9 @@ public class UsuariosController extends AppController {
         if (usuario != null) {
             usuario.delete(); // Eliminación del usuario (la eliminación en cascada se maneja en la base de
                               // datos)
-            respond("Usuario eliminado correctamente").status(200);
+            respond("Usuario eliminado correctamente").contentType("application/json").status(200);
         } else {
-            respond("Usuario no encontrado").status(404);
+            respond("Usuario no encontrado").contentType("application/json").status(404);
         }
     }
 
@@ -152,7 +151,7 @@ public class UsuariosController extends AppController {
         Usuario user = Usuario.verifyJwt(token);
         if (user == null) {
             // Token inválido o expirado
-            respond("{\"error\": \"Token inválido o expirado.\"}").status(401);
+            respond("{\"error\": \"Token inválido o expirado.\"}").contentType("application/json").status(401);
             return;
         }
 
