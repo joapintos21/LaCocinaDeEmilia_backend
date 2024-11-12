@@ -1,11 +1,15 @@
 package app.models;
 
+import java.util.List;
+
 import org.javalite.activejdbc.Model;
+import org.javalite.activejdbc.annotations.HasMany;
 import org.javalite.activejdbc.annotations.Table;
 import org.json.JSONObject;
 
-@Table("aplicacion.CategoriaProducto")
-public class CategoriaProducto extends Model {
+@Table("aplicacion.Categoria")
+@HasMany(child = ProductoCategoria.class, foreignKeyName = "categoria_id")
+public class Categoria extends Model {
 
     static {
         validatePresenceOf("titulo");
@@ -32,5 +36,11 @@ public class CategoriaProducto extends Model {
         if (producto != null) {
             producto.removeCategoria(this);
         }
+    }
+
+    public List<Producto> getProductos() {
+        return Producto.findBySQL("SELECT p.* FROM aplicacion.Producto p " +
+                "JOIN aplicacion.Producto_Categoria pc ON p.id = pc.producto_id " +
+                "WHERE pc.categoria_id = ?", getId());
     }
 }
