@@ -8,7 +8,7 @@ import org.javalite.activejdbc.annotations.Table;
 import org.json.JSONObject;
 
 @Table("aplicacion.Categoria")
-@HasMany(child = ProductoCategoria.class, foreignKeyName = "categoria_id")
+@HasMany(child = Producto.class, foreignKeyName = "categoria_id")
 public class Categoria extends Model {
 
     static {
@@ -24,23 +24,8 @@ public class Categoria extends Model {
         return jsonObject;
     }
 
-    // Método para asociar productos
-    public void addProducto(Producto producto) {
-        if (producto != null) {
-            producto.addCategoria(this);
-        }
-    }
-
-    // Método para eliminar un producto
-    public void removeProducto(Producto producto) {
-        if (producto != null) {
-            producto.removeCategoria(this);
-        }
-    }
-
+    // Método para obtener todos los productos asociados a esta categoría
     public List<Producto> getProductos() {
-        return Producto.findBySQL("SELECT p.* FROM aplicacion.Producto p " +
-                "JOIN aplicacion.Producto_Categoria pc ON p.id = pc.producto_id " +
-                "WHERE pc.categoria_id = ?", getId());
+        return getAll(Producto.class);
     }
 }

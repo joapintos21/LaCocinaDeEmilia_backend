@@ -120,15 +120,6 @@ CREATE TABLE aplicacion.Envio (
     entregado BOOLEAN DEFAULT FALSE
 );
 
--- Tabla Producto
-CREATE TABLE aplicacion.Producto (
-    id SERIAL PRIMARY KEY,
-    descripcion TEXT NOT NULL,
-    imagen TEXT,
-    precio NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
-    visible BOOLEAN DEFAULT TRUE
-);
-
 -- Tabla Categoria
 CREATE TABLE aplicacion.Categoria (
     id SERIAL PRIMARY KEY,
@@ -136,11 +127,14 @@ CREATE TABLE aplicacion.Categoria (
     descripcion TEXT
 );
 
--- Relación de muchos a muchos entre Producto y Categoria
-CREATE TABLE aplicacion.Producto_Categoria (
-    producto_id INT REFERENCES aplicacion.Producto(id) ON DELETE CASCADE,
-    categoria_id INT REFERENCES aplicacion.Categoria(id) ON DELETE CASCADE,
-    PRIMARY KEY (producto_id, categoria_id)
+-- Tabla Producto
+CREATE TABLE aplicacion.Producto (
+    id SERIAL PRIMARY KEY,
+    descripcion TEXT NOT NULL,
+    imagen TEXT,
+    precio NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
+    categoria_id INT REFERENCES aplicacion.Categoria(id) ON DELETE SET NULL,
+    visible BOOLEAN DEFAULT TRUE
 );
 
 -- Tabla EtiquetaProducto
