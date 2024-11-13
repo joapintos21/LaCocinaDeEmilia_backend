@@ -1,5 +1,6 @@
 package app.controllers;
 
+import app.models.Adicional;
 import app.models.Producto;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
@@ -69,6 +70,30 @@ public class ProductosController extends AppController {
             respond(producto.toJson().toString()).contentType("application/json").status(200);
         } else {
             respond("Producto no encontrado").contentType("application/json").status(404);
+        }
+    }
+
+    // Endpoint para listar los adicionales de un producto específico
+    @GET
+    public void listarAdicionales() {
+        int productoId = Integer.parseInt(param("producto_id"));
+        Producto producto = Producto.findById(productoId);
+
+        if (producto != null) {
+            // Usamos una consulta con JOIN para obtener los adicionales relacionados
+            List<Adicional> adicionales = Adicional.findBySQL(
+                    "SELECT a.* FROM aplicacion.Adicional a " +
+                            "JOIN aplicacion.Producto_Adicional pa ON a.id = pa.adicional_id " +
+                            "WHERE pa.producto_id = ?",
+                    productoId);
+
+            JSONArray adicionalesJson = new JSONArray();
+            adicionales.forEach(adicional -> adicionalesJson.put(adicional.toJson()));
+
+            respond(adicionalesJson.toString()).contentType("application/json").status(200);
+        } else {
+            respond("{\"error\": \"Producto no encontrado\"}")
+                    .contentType("application/json").status(404);
         }
     }
 

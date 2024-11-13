@@ -1,11 +1,15 @@
 package app.models;
 
+import java.util.List;
+
 import org.javalite.activejdbc.Model;
+import org.javalite.activejdbc.annotations.HasMany;
 import org.javalite.activejdbc.annotations.Table;
 import org.json.JSONObject;
 
-@Table("aplicacion.CategoriaProducto")
-public class CategoriaProducto extends Model {
+@Table("aplicacion.Categoria")
+@HasMany(child = Producto.class, foreignKeyName = "categoria_id")
+public class Categoria extends Model {
 
     static {
         validatePresenceOf("titulo");
@@ -20,17 +24,8 @@ public class CategoriaProducto extends Model {
         return jsonObject;
     }
 
-    // Método para asociar productos
-    public void addProducto(Producto producto) {
-        if (producto != null) {
-            producto.addCategoria(this);
-        }
-    }
-
-    // Método para eliminar un producto
-    public void removeProducto(Producto producto) {
-        if (producto != null) {
-            producto.removeCategoria(this);
-        }
+    // Método para obtener todos los productos asociados a esta categoría
+    public List<Producto> getProductos() {
+        return getAll(Producto.class);
     }
 }
