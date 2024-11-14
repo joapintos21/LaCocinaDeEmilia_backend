@@ -1,15 +1,27 @@
 package app.config;
 
 import app.models.Usuario;
+import java.util.Set;
 import org.javalite.activeweb.controller_filters.HttpSupportFilter;
 
 public class JWTFilter extends HttpSupportFilter {
 
+    private static final Set<String> EXCLUDED_PATHS = Set.of(
+            "/usuarios/create",
+            "/usuarios/validarToken",
+            "/login/iniciarSesion");
+
+    private static final Set<String> EXCLUDED_CONTROLLER_PATHS = Set.of(
+            "/productos",
+            "/categorias");
+
     @Override
     public void before() {
-        // Verifica si el método es el que deseas omitir
-        if (path().endsWith("/usuarios/create") || path().endsWith("/usuarios/validarToken")
-                || path().endsWith("/login/iniciarSesion")) {
+        // Excluye paths específicos de EXCLUDED_PATHS
+        if (EXCLUDED_PATHS.stream().anyMatch(path()::endsWith)) {
+            return;
+        }
+        if (method().equalsIgnoreCase("GET") && EXCLUDED_CONTROLLER_PATHS.stream().anyMatch(path()::endsWith)) {
             return;
         }
         // Obtener el token desde el encabezado Authorization
