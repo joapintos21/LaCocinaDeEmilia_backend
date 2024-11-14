@@ -8,6 +8,7 @@ import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.POST;
 import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -95,6 +96,29 @@ public class ProductosController extends AppController {
             respond("{\"error\": \"Producto no encontrado\"}")
                     .contentType("application/json").status(404);
         }
+    }
+
+    @GET
+    public void buscar() {
+        String query = param("query"); // Obtiene el parámetro de búsqueda
+
+        if (query == null || query.isEmpty()) {
+            respond("El parámetro de búsqueda es requerido").status(400);
+            return;
+        }
+
+        // Realiza la búsqueda de productos por el campo "descripcion" o "titulo"
+        List<Producto> productos = Producto.where("descripcion ILIKE ?", "%" + query + "%");
+
+        // Convierte la lista de productos a un array JSON
+        JSONArray jsonArray = new JSONArray();
+        for (Producto producto : productos) {
+            JSONObject jsonProducto = producto.toJson();
+            jsonArray.put(jsonProducto);
+        }
+
+        // Responde con el array JSON
+        respond(jsonArray.toString()).contentType("application/json").status(200);
     }
 
     // Eliminar un producto

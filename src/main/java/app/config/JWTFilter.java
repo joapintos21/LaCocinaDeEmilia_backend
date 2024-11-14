@@ -21,7 +21,7 @@ public class JWTFilter extends HttpSupportFilter {
         if (EXCLUDED_PATHS.stream().anyMatch(path()::endsWith)) {
             return;
         }
-        if (method().equalsIgnoreCase("GET") && EXCLUDED_CONTROLLER_PATHS.stream().anyMatch(path()::endsWith)) {
+        if (method().equalsIgnoreCase("GET") && EXCLUDED_CONTROLLER_PATHS.stream().anyMatch(path()::startsWith)) {
             return;
         }
         // Obtener el token desde el encabezado Authorization

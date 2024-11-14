@@ -22,6 +22,14 @@ public class Producto extends Model {
         jsonObject.put("descripcion", get("descripcion"));
         jsonObject.put("precio", get("precio"));
         jsonObject.put("visible", get("visible"));
+        // Obtener la categoría asociada
+        Categoria categoria = Categoria.findById(get("categoria_id"));
+        if (categoria != null) {
+            jsonObject.put("categoria", categoria.get("titulo")); // Agregar el título de la categoría
+        } else {
+            jsonObject.put("categoria", JSONObject.NULL); // Manejar el caso de categoría nula
+        }
+
         return jsonObject;
     }
 }
