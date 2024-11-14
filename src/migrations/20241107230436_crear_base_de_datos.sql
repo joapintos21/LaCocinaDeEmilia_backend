@@ -87,8 +87,19 @@ CREATE TABLE aplicacion.Pedido (
     estado EstadoPedidoEnum NOT NULL DEFAULT 'EN_PROGRESO',
     fechaCreacion DATE DEFAULT CURRENT_DATE,
     notas TEXT,
-    metodo_pago MetodoPagoEnum NOT NULL,
-    total NUMERIC(10,2) NOT NULL
+    metodo_pago MetodoPagoEnum,
+    total NUMERIC(10,2)
+);
+
+-- Tabla Pedido_Historico para almacenar el historial de cambios de estado de los pedidos
+CREATE TABLE aplicacion.Pedido_Historico (
+    id SERIAL PRIMARY KEY,
+    pedido_id INT REFERENCES aplicacion.Pedido(id) ON DELETE CASCADE,
+    estado_anterior EstadoPedidoEnum,
+    estado_nuevo EstadoPedidoEnum NOT NULL,
+    fecha_cambio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario_id INT REFERENCES gestion_usuarios.Usuario(id) ON DELETE SET NULL,
+    observaciones TEXT
 );
 
 -- Tabla MetodoPago
@@ -109,27 +120,21 @@ CREATE TABLE aplicacion.Envio (
     entregado BOOLEAN DEFAULT FALSE
 );
 
+-- Tabla Categoria
+CREATE TABLE aplicacion.Categoria (
+    id SERIAL PRIMARY KEY,
+    titulo VARCHAR(255) NOT NULL,
+    descripcion TEXT
+);
+
 -- Tabla Producto
 CREATE TABLE aplicacion.Producto (
     id SERIAL PRIMARY KEY,
     descripcion TEXT NOT NULL,
     imagen TEXT,
     precio NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
+    categoria_id INT REFERENCES aplicacion.Categoria(id) ON DELETE SET NULL,
     visible BOOLEAN DEFAULT TRUE
-);
-
--- Tabla CategoriaProducto
-CREATE TABLE aplicacion.CategoriaProducto (
-    id SERIAL PRIMARY KEY,
-    titulo VARCHAR(255) NOT NULL,
-    descripcion TEXT
-);
-
--- Relación de muchos a muchos entre Producto y CategoriaProducto
-CREATE TABLE aplicacion.Producto_Categoria (
-    producto_id INT REFERENCES aplicacion.Producto(id) ON DELETE CASCADE,
-    categoria_id INT REFERENCES aplicacion.CategoriaProducto(id) ON DELETE CASCADE,
-    PRIMARY KEY (producto_id, categoria_id)
 );
 
 -- Tabla EtiquetaProducto
@@ -168,10 +173,19 @@ CREATE TABLE aplicacion.Pack_Producto (
 );
 
 -- Relación de muchos a muchos entre Pack y Pedido
-CREATE TABLE aplicacion.Pack_Pedido (
+CREATE TABLE aplicacion.Pedido_Pack (
     pack_id INT REFERENCES aplicacion.Pack(id) ON DELETE CASCADE,
     pedido_id INT REFERENCES aplicacion.Pedido(id) ON DELETE CASCADE,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
     PRIMARY KEY (pack_id, pedido_id)
+);
+
+-- Tabla Pedido_Producto: relación de productos en un pedido, con cantidad
+CREATE TABLE aplicacion.Pedido_Producto (
+    pedido_id INT REFERENCES aplicacion.Pedido(id) ON DELETE CASCADE,
+    producto_id INT REFERENCES aplicacion.Producto(id) ON DELETE CASCADE,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    PRIMARY KEY (pedido_id, producto_id)
 );
 
 -- Tabla Adicional
@@ -180,6 +194,21 @@ CREATE TABLE aplicacion.Adicional (
     descripcion TEXT,
     costoAdicional NUMERIC(10,2),
     visible BOOLEAN DEFAULT TRUE
+);
+
+-- Crear tabla ProductoAdicional para relacionar productos y adicionales
+CREATE TABLE aplicacion.Producto_Adicional (
+    producto_id INT REFERENCES aplicacion.Producto(id) ON DELETE CASCADE,
+    adicional_id INT REFERENCES aplicacion.Adicional(id) ON DELETE CASCADE,
+    PRIMARY KEY (producto_id, adicional_id)
+);
+
+-- Tabla Pedido_Producto_Adicional: adicionales específicos para productos en un pedido
+CREATE TABLE aplicacion.Pedido_Producto_Adicional (
+    pedido_id INT REFERENCES aplicacion.Pedido(id) ON DELETE CASCADE,
+    producto_id INT REFERENCES aplicacion.Producto(id) ON DELETE CASCADE,
+    adicional_id INT REFERENCES aplicacion.Adicional(id) ON DELETE CASCADE,
+    PRIMARY KEY (pedido_id, producto_id, adicional_id)
 );
 
 -- Índices y restricciones adicionales
