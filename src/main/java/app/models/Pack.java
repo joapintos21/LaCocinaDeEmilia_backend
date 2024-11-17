@@ -1,6 +1,7 @@
 package app.models;
 
 import org.javalite.activejdbc.Model;
+import org.javalite.activejdbc.annotations.HasMany;
 import org.javalite.activejdbc.annotations.Table;
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -8,26 +9,36 @@ import org.json.JSONArray;
 import java.util.List;
 
 @Table("aplicacion.Pack")
+@HasMany(child = PackProducto.class, foreignKeyName = "pack_id")
 public class Pack extends Model {
 
     static {
-        validatePresenceOf("precio");
+        validatePresenceOf("nombre", "precio");
         validateNumericalityOf("precio").greaterThan(0);
     }
 
     // Formato JSON para Pack
     public JSONObject toJson() {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("id", get("id"));
-        jsonObject.put("precio", get("precio"));
+        JSONObject json = new JSONObject();
+        json.put("id", get("id"));
+        json.put("nombre", get("nombre"));
+        json.put("precio", get("precio"));
 
-        // Obtener productos asociados
+        // Obtener los productos asociados al Pack
+        List<PackProducto> packProductos = PackProducto.where("pack_id = ?", getId());
         JSONArray productosArray = new JSONArray();
-        List<Producto> productos = getProductos();
-        productos.forEach(producto -> productosArray.put(producto.toJson()));
-        jsonObject.put("productos", productosArray);
 
-        return jsonObject;
+        for (PackProducto packProducto : packProductos) {
+            Producto producto = Producto.findById(packProducto.get("producto_id"));
+            if (producto != null) {
+                JSONObject productoJson = producto.toJson();
+                productoJson.put("cantidad", packProducto.get("cantidad")); // Incluye la cantidad del Pack_Producto
+                productosArray.put(productoJson);
+            }
+        }
+
+        json.put("productos", productosArray);
+        return json;
     }
 
     // Método para obtener los productos asociados al pack

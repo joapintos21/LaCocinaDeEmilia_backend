@@ -13,7 +13,8 @@ public class JWTFilter extends HttpSupportFilter {
 
     private static final Set<String> EXCLUDED_CONTROLLER_PATHS = Set.of(
             "/productos",
-            "/categorias");
+            "/categorias",
+            "/packs");
 
     @Override
     public void before() {
@@ -29,7 +30,7 @@ public class JWTFilter extends HttpSupportFilter {
 
         if (token == null || !token.startsWith("Bearer ")) {
             // Renderiza un mensaje JSON y establece el código de estado en 401
-            respond("{\"error\": \"Token no proporcionado o inválido.\"}").status(401);
+            respond("{\"error\": \"Token no proporcionado o inválido.\"}").contentType("application/json").status(401);
             return;
         }
         // Eliminar "Bearer " para obtener el token
@@ -38,7 +39,7 @@ public class JWTFilter extends HttpSupportFilter {
         Usuario usuario = Usuario.verifyJwt(token);
         if (usuario == null) {
             // Token inválido o expirado
-            respond("{\"error\": \"Token inválido o expirado.\"}").status(401);
+            respond("{\"error\": \"Token inválido o expirado.\"}").contentType("application/json").status(401);
             return;
         }
         // Almacenar userId en el contexto

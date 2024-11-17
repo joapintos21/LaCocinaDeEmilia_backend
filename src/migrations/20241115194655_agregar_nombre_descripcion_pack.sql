@@ -1,0 +1,3 @@
+ALTER TABLE aplicacion.Pack
+ADD COLUMN nombre VARCHAR(255) NOT NULL,
+ADD COLUMN descripcion TEXT;
