@@ -8,6 +8,7 @@ import org.json.JSONObject;
 @Table("aplicacion.Producto")
 @HasMany(child = ProductoAdicional.class, foreignKeyName = "producto_id")
 @HasMany(child = PedidoProducto.class, foreignKeyName = "producto_id")
+@HasMany(child = PackProducto.class, foreignKeyName = "producto_id")
 public class Producto extends Model {
 
     static {
