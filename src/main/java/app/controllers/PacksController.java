@@ -1,5 +1,6 @@
 package app.controllers;
 
+import app.models.DescuentoPack;
 import app.models.Pack;
 import app.models.PackProducto;
 import app.models.PackRequest;
@@ -10,6 +11,8 @@ import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.POST;
 import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
+import org.json.JSONObject;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -160,6 +163,37 @@ public class PacksController extends AppController {
             respond("Pack eliminado correctamente").contentType("application/json").status(200);
         } else {
             respond("Pack no encontrado").contentType("application/json").status(404);
+        }
+    }
+
+    @POST
+    public void crearDescuento() {
+        try {
+            // Parsear el cuerpo de la solicitud
+            JSONObject body = new JSONObject(getRequestString());
+            int packId = body.getInt("pack_id"); // ID del pack al que se le asignará el descuento
+            int descuentoId = body.getInt("descuento_id"); // ID del descuento a asignar
+
+            // Crear la relación entre el pack y el descuento
+            DescuentoPack descuentoPack = new DescuentoPack();
+            descuentoPack.set("pack_id", packId);
+            descuentoPack.set("descuento_id", descuentoId);
+
+            // Guardar la relación en la base de datos
+            if (descuentoPack.saveIt()) {
+                respond(descuentoPack.toJson().toString())
+                        .contentType("application/json")
+                        .status(201); // Creado
+            } else {
+                respond(descuentoPack.errors().toJSON())
+                        .contentType("application/json")
+                        .status(400); // Error en la solicitud
+            }
+        } catch (Exception e) {
+            // Manejar excepciones y devolver un error genérico
+            respond("{\"error\": \"" + e.getMessage() + "\"}")
+                    .contentType("application/json")
+                    .status(500); // Error interno del servidor
         }
     }
 }

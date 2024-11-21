@@ -1,6 +1,7 @@
 package app.controllers;
 
 import app.models.Adicional;
+import app.models.DescuentoProducto;
 import app.models.Producto;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
@@ -58,7 +59,7 @@ public class ProductosController extends AppController {
         List<Producto> productos = Producto.findAll();
         JSONArray jsonArray = new JSONArray();
         productos.forEach(producto -> jsonArray.put(producto.toJson()));
-        respond(jsonArray.toString()).contentType("application/json");
+        respond(jsonArray.toString()).contentType("application/json").status(200);
     }
 
     // Obtener un producto por ID
@@ -131,6 +132,27 @@ public class ProductosController extends AppController {
             respond("Producto eliminado correctamente").status(200);
         } else {
             respond("Producto no encontrado").status(404);
+        }
+    }
+
+    @POST
+    public void crearDescuento() {
+        try {
+            JSONObject body = new JSONObject(getRequestString());
+            int productoId = body.getInt("producto_id");
+            int descuentoId = body.getInt("descuento_id");
+
+            DescuentoProducto descuentoProducto = new DescuentoProducto();
+            descuentoProducto.set("producto_id", productoId);
+            descuentoProducto.set("descuento_id", descuentoId);
+
+            if (descuentoProducto.saveIt()) {
+                respond(descuentoProducto.toJson().toString()).contentType("application/json").status(201);
+            } else {
+                respond(descuentoProducto.errors().toJSON()).contentType("application/json").status(400);
+            }
+        } catch (Exception e) {
+            respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 }
