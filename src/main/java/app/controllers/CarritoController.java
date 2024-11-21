@@ -1,34 +1,38 @@
 package app.controllers;
 
 import app.models.CarritoRequest;
+import app.models.EstadoPedido;
+import app.models.Pack;
 import app.models.Pedido;
+import app.models.PedidoPack;
 import app.models.Producto;
 import app.models.PedidoProducto;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.POST;
 
 public class CarritoController extends AppController {
-    public enum EstadoPedido {
-        EN_PROGRESO,
-        PENDIENTE_CONFIRMACION_PAGO,
-        LISTO_PARA_ENVIAR,
-        ENTREGADO,
-        CANCELADO
-    }
-
     @POST
     public void agregarProductoACarrito(CarritoRequest carritoRequest) {
         int clienteId = carritoRequest.getClienteId();
         int productoId = carritoRequest.getProductoId();
         int cantidad = carritoRequest.getCantidad();
 
-        // Verificar si ya existe un pedido en estado EN_PROGRESO para el cliente
-        Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?::EstadoPedidoEnum", clienteId, "EN_PROGRESO");
+        // Buscar el ID del estado 'EN_PROGRESO'
+        EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
+        if (estadoEnProgreso == null) {
+            respond("{\"error\": \"Estado 'EN_PROGRESO' no encontrado\"}")
+                    .contentType("application/json").status(500);
+            return;
+        }
+
+        // Verificar si ya existe un pedido en estado 'EN_PROGRESO' para el cliente
+        Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?", clienteId, estadoEnProgreso.getId());
 
         if (pedido == null) {
             // Crear un nuevo pedido si no existe
             pedido = new Pedido();
             pedido.set("cliente_id", clienteId);
+            pedido.set("estado", estadoEnProgreso.getId());
             pedido.saveIt();
         }
 
@@ -61,6 +65,7 @@ public class CarritoController extends AppController {
             pedido.saveIt();
         }
 
+        // Responder con un mensaje de éxito
         respond("{\"message\": \"Producto agregado al pedido\"}")
                 .contentType("application/json").status(200);
     }
@@ -71,13 +76,22 @@ public class CarritoController extends AppController {
         int productoId = carritoRequest.getProductoId();
         int cantidadQuitar = carritoRequest.getCantidad();
 
-        // Buscar el pedido en estado EN_PROGRESO para el cliente
-        Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?::EstadoPedidoEnum", clienteId, "EN_PROGRESO");
+        // Buscar el estado 'EN_PROGRESO' en la tabla EstadoPedido
+        EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
+        if (estadoEnProgreso == null) {
+            respond("{\"error\": \"Estado 'EN_PROGRESO' no encontrado\"}")
+                    .contentType("application/json").status(500);
+            return;
+        }
+
+        // Buscar el pedido en estado 'EN_PROGRESO' para el cliente
+        Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?", clienteId, estadoEnProgreso.getId());
 
         if (pedido != null) {
             // Buscar el producto en el pedido
             PedidoProducto pedidoProducto = PedidoProducto.findFirst("pedido_id = ? AND producto_id = ?",
-                    pedido.getId(), productoId);
+                    pedido.getId(),
+                    productoId);
 
             if (pedidoProducto != null) {
                 int cantidadActual = pedidoProducto.getInteger("cantidad");
@@ -121,5 +135,60 @@ public class CarritoController extends AppController {
             respond("{\"error\": \"Pedido no encontrado\"}")
                     .contentType("application/json").status(404);
         }
+    }
+
+    @POST
+    public void agregarPackACarrito(CarritoRequest carritoRequest) {
+        int clienteId = carritoRequest.getClienteId();
+        int packId = carritoRequest.getProductoId(); // Usaremos productoId para el ID del pack en este caso
+        int cantidad = carritoRequest.getCantidad();
+
+        // Buscar el estado 'EN_PROGRESO' en la tabla EstadoPedido
+        EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
+        if (estadoEnProgreso == null) {
+            respond("{\"error\": \"Estado 'EN_PROGRESO' no encontrado\"}")
+                    .contentType("application/json").status(500);
+            return;
+        }
+
+        // Buscar o crear el pedido en estado 'EN_PROGRESO' para el cliente
+        Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?", clienteId, estadoEnProgreso.getId());
+        if (pedido == null) {
+            pedido = new Pedido();
+            pedido.set("cliente_id", clienteId);
+            pedido.set("estado", estadoEnProgreso.getId());
+            pedido.saveIt();
+        }
+
+        // Buscar si el pack ya está en el pedido
+        PedidoPack pedidoPack = PedidoPack.findFirst("pedido_id = ? AND pack_id = ?", pedido.getId(), packId);
+        if (pedidoPack == null) {
+            // Si el pack no está, agregarlo
+            pedidoPack = new PedidoPack();
+            pedidoPack.set("pedido_id", pedido.getId());
+            pedidoPack.set("pack_id", packId);
+            pedidoPack.set("cantidad", cantidad);
+        } else {
+            // Si el pack ya está, incrementar la cantidad
+            int cantidadActual = pedidoPack.getInteger("cantidad");
+            pedidoPack.set("cantidad", cantidadActual + cantidad);
+        }
+        pedidoPack.saveIt();
+
+        // Actualizar el total del pedido con el precio del pack
+        Pack pack = Pack.findById(packId);
+        if (pack != null) {
+            Double totalActual = pedido.getDouble("total");
+            if (totalActual == null) {
+                totalActual = 0.0;
+            }
+            double nuevoTotal = totalActual + pack.getDouble("precio") * cantidad;
+            pedido.set("total", nuevoTotal);
+            pedido.saveIt();
+        }
+
+        // Responder con éxito
+        respond("{\"message\": \"Pack agregado al pedido\"}")
+                .contentType("application/json").status(200);
     }
 }

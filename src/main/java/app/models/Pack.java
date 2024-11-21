@@ -10,6 +10,7 @@ import java.util.List;
 
 @Table("aplicacion.Pack")
 @HasMany(child = PackProducto.class, foreignKeyName = "pack_id")
+@HasMany(child = DescuentoPack.class, foreignKeyName = "pack_id")
 public class Pack extends Model {
 
     static {
@@ -38,6 +39,20 @@ public class Pack extends Model {
         }
 
         json.put("productos", productosArray);
+
+        // Obtener el DescuentoPack asociado
+        List<DescuentoPack> descuentos = DescuentoPack.where("pack_id = ?", getId());
+        if (!descuentos.isEmpty()) {
+            JSONArray descuentosArray = new JSONArray();
+            for (DescuentoPack descuentoPack : descuentos) {
+                JSONObject descuentoJson = descuentoPack.toJson(); // Asegúrate de tener un método toJson() en
+                                                                   // DescuentoPack
+                descuentosArray.put(descuentoJson);
+            }
+            json.put("descuentos", descuentosArray);
+        } else {
+            json.put("descuentos", new JSONArray()); // Si no hay descuentos, agrega un array vacío
+        }
         return json;
     }
 
