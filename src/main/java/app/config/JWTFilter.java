@@ -1,7 +1,9 @@
 package app.config;
 
+import app.models.Permiso;
 import app.models.Usuario;
 import java.util.Set;
+import org.javalite.activeweb.AppContext;
 import org.javalite.activeweb.controller_filters.HttpSupportFilter;
 
 public class JWTFilter extends HttpSupportFilter {
@@ -42,8 +44,29 @@ public class JWTFilter extends HttpSupportFilter {
             respond("{\"error\": \"Token inválido o expirado.\"}").contentType("application/json").status(401);
             return;
         }
+
         // Almacenar userId en el contexto
-        appContext().set("userId", usuario.getId()); // Almacenar userId en el contexto
+        AppContext context = appContext();
+        context.set("userId", usuario.getId());
+        context.set("rolId", usuario.getInteger("rol_id"));
+
+        // Obtener el método y el endpoint
+        String metodo = method(); // GET, POST, PUT, DELETE
+        String endpoint = path(); // Obtiene el endpoint actual
+
+        // Determinar el tipo de permiso necesario
+        String tipoPermiso = metodo.equals("GET") ? "LECTURA" : "ESCRITURA";
+
+        // Obtener el rol del usuario desde el contexto
+        int rolId = (Integer) context.get("rolId");
+
+        // Verificar permisos
+        if (!Permiso.tienePermiso(rolId, endpoint, tipoPermiso)) {
+            respond("{\"error\": \"No tienes permiso para acceder a este recurso.\"}")
+                    .contentType("application/json")
+                    .status(403); // Forbidden
+            return;
+        }
     }
 
     @Override
