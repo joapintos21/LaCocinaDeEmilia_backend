@@ -4,6 +4,8 @@ import app.models.Pedido;
 import app.models.Producto;
 import app.models.Pack;
 import app.models.Adicional;
+import app.models.Cliente;
+import app.models.EstadoPedido;
 import app.models.PedidoProducto;
 import app.models.PedidoHistorico;
 import app.models.PedidoPack;
@@ -212,6 +214,80 @@ public class PedidosController extends AppController {
             respond("{\"message\": \"Pedido completado con éxito\"}").contentType("application/json").status(200);
         } else {
             respond("{\"error\": \"Pedido no encontrado o ya procesado\"}").contentType("application/json").status(404);
+        }
+    }
+
+    @GET
+    public void obtenerPedidoEnProgreso() {
+        int userId = Integer.parseInt(param("userId"));
+        EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
+        if (estadoEnProgreso == null) {
+            respond("{\"error\": \"Estado 'EN_PROGRESO' no encontrado\"}")
+                    .contentType("application/json").status(500);
+            return;
+        }
+
+        Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
+        if (cliente == null) {
+            respond("{\"error\": \"Cliente no encontrado\"}")
+                    .contentType("application/json").status(404);
+            return;
+        }
+
+        Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?", cliente.getId(), estadoEnProgreso.getId());
+        if (pedido != null) {
+            // Crear un objeto JSON manualmente para el pedido
+            JSONObject pedidoJson = new JSONObject();
+            pedidoJson.put("id", pedido.getId());
+            pedidoJson.put("cliente_id", pedido.get("cliente_id"));
+            pedidoJson.put("estado", pedido.get("estado"));
+            pedidoJson.put("metodo_pago", pedido.get("metodo_pago"));
+            pedidoJson.put("total", pedido.get("total"));
+
+            // Crear un array para los productos
+            JSONArray productosJsonArray = new JSONArray();
+
+            // Obtener los productos del pedido usando la tabla de relación PedidoProducto
+            List<PedidoProducto> pedidoProductos = PedidoProducto.where("pedido_id = ?", pedido.getId());
+
+            for (PedidoProducto pedidoProducto : pedidoProductos) {
+                // Obtener el producto asociado
+                Producto producto = Producto.findById(pedidoProducto.get("producto_id"));
+
+                if (producto != null) {
+                    // Crear un objeto JSON para el producto
+                    JSONObject productoJson = new JSONObject();
+                    productoJson.put("id", producto.get("id"));
+                    productoJson.put("descripcion", producto.get("descripcion"));
+                    productoJson.put("cantidad", pedidoProducto.get("cantidad"));
+                    productoJson.put("precio", producto.get("precio"));
+
+                    // Agregar el producto al array de productos
+                    productosJsonArray.put(productoJson);
+                }
+            }
+
+            // Agregar el array de productos al objeto JSON del pedido
+            pedidoJson.put("productos", productosJsonArray);
+
+            // Crear un array para los packs
+            JSONArray packsJsonArray = new JSONArray();
+            List<PedidoPack> pedidoPacks = PedidoPack.where("pedido_id = ?", pedido.getId());
+            for (PedidoPack pedidoPack : pedidoPacks) {
+                Pack pack = Pack.findById(pedidoPack.get("pack_id"));
+                if (pack != null) {
+                    JSONObject packJson = new JSONObject();
+                    packJson.put("id", pack.get("id"));
+                    packJson.put("nombre", pack.get("nombre"));
+                    packJson.put("cantidad", pedidoPack.get("cantidad"));
+                    packJson.put("precio", pack.get("precio"));
+                    packsJsonArray.put(packJson);
+                }
+            }
+            pedidoJson.put("packs", packsJsonArray);
+
+            // Enviar la respuesta JSON completa
+            respond(pedidoJson.toString()).contentType("application/json").status(200);
         }
     }
 }

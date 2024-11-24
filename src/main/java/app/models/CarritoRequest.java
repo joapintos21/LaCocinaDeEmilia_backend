@@ -1,17 +1,17 @@
 package app.models;
 
 public class CarritoRequest {
-    private int clienteId;
+    private int userId;
     private int productoId;
     private int cantidad;
 
     // Getters y Setters
-    public int getClienteId() {
-        return clienteId;
+    public int getUserId() {
+        return userId;
     }
 
-    public void setClienteId(int clienteId) {
-        this.clienteId = clienteId;
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 
     public int getProductoId() {
