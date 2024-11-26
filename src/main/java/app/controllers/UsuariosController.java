@@ -25,8 +25,14 @@ public class UsuariosController extends AppController {
                 if (rolId != null && rolId != 0) {
                     user.assignRol(rolId); // Asigna el rol al usuario
                 }
+                // Obtener la URL base del entorno
+                String baseUrl = System.getenv("BASE_URL");
+                if (baseUrl == null || baseUrl.isEmpty()) {
+                    baseUrl = "http://localhost:3000"; // Valor predeterminado si no se encuentra la variable
+                }
+
                 String token = user.generateJwtValidation();
-                String validationLink = "http://localhost:3000/verificar?token=" + token;
+                String validationLink = baseUrl + "/verificar?token=" + token;
 
                 EmailService emailService = new EmailService();
                 // Contenido del email en HTML
