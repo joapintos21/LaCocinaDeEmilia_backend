@@ -126,6 +126,10 @@
                             <name>activeweb.log.request</name>
                             <value>true</value>
                         </systemProperty>
+                        <systemProperty>
+                            <name>environment</name>
+                            <value>${environment}</value>
+                        </systemProperty>
                     </systemProperties>
                 </configuration>
             </plugin>
@@ -214,11 +218,6 @@
             <groupId>com.sendgrid</groupId>
             <artifactId>sendgrid-java</artifactId>
             <version>4.9.3</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.cdimascio</groupId>
-            <artifactId>dotenv-java</artifactId>
-            <version>2.2.3</version>
         </dependency>
       </dependencies>
 </project>

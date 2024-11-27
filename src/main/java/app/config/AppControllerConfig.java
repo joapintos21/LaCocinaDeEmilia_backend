@@ -16,7 +16,6 @@ limitations under the License.
 package app.config;
 
 import app.controllers.RequestContextFilter;
-import app.services.EnvLoader;
 
 import org.javalite.activeweb.AbstractControllerConfig;
 import org.javalite.activeweb.AppContext;
@@ -28,7 +27,6 @@ import org.javalite.activeweb.controller_filters.DBConnectionFilter;
 public class AppControllerConfig extends AbstractControllerConfig {
 
     public void init(AppContext context) {
-        EnvLoader.load();
         add(new RequestContextFilter(), new DBConnectionFilter(), new JWTFilter());
     }
 }
