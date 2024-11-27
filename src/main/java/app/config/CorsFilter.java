@@ -15,7 +15,7 @@ public class CorsFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        baseUrl = System.getenv("CORS_BASE_URL");
+        baseUrl = System.getenv("BASE_URL");
         if (baseUrl == null || baseUrl.isEmpty()) {
             baseUrl = "http://localhost:3000"; // Fallback
         }
