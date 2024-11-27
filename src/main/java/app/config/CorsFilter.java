@@ -30,7 +30,7 @@ public class CorsFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         // Configurar los encabezados de CORS
-        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Origin", baseUrl);
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
 
