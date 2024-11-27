@@ -27,6 +27,11 @@ import org.javalite.activeweb.controller_filters.DBConnectionFilter;
 public class AppControllerConfig extends AbstractControllerConfig {
 
     public void init(AppContext context) {
+        String baseUrl = System.getenv("BASE_URL");
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            baseUrl = "http://localhost:3000"; // Valor por defecto
+        }
+        context.set("baseUrl", baseUrl);
         add(new RequestContextFilter(), new DBConnectionFilter(), new JWTFilter());
     }
 }

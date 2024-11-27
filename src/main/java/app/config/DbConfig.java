@@ -24,9 +24,6 @@ import org.javalite.activeweb.AppContext;
 public class DbConfig extends AbstractDBConfig {
 
     public void init(AppContext context) {
-
         configFile("/database.properties");
-        System.out.println(System.getenv("BASE_URL"));
-        System.out.println(getConnectionConfigsForCurrentEnv());
     }
 }

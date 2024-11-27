@@ -6,14 +6,19 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 
 public class CorsFilter implements Filter {
 
+    private String baseUrl;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        // Método init opcional, puedes dejarlo vacío si no necesitas configuración
-        // adicional
+        baseUrl = System.getenv("CORS_BASE_URL");
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            baseUrl = "http://localhost:3000"; // Fallback
+        }
     }
 
     @Override
@@ -25,7 +30,7 @@ public class CorsFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         // Configurar los encabezados de CORS
-        response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.setHeader("Access-Control-Allow-Origin", baseUrl);
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
 
