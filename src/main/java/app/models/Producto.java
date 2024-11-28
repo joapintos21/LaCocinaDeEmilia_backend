@@ -34,7 +34,7 @@ public class Producto extends Model {
         // Obtener la categoría asociada
         Categoria categoria = Categoria.findById(get("categoria_id"));
         if (categoria != null) {
-            jsonObject.put("categoria", categoria.get("titulo")); // Agregar el título de la categoría
+            jsonObject.put("categoria", categoria.toJson()); // Agregar el título de la categoría
         } else {
             jsonObject.put("categoria", JSONObject.NULL); // Manejar el caso de categoría nula
         }
