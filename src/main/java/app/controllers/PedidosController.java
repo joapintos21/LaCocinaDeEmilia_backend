@@ -288,6 +288,9 @@ public class PedidosController extends AppController {
 
             // Enviar la respuesta JSON completa
             respond(pedidoJson.toString()).contentType("application/json").status(200);
+        } else {
+            respond("{\"error\": \"No hay pedidos en curso.\"}")
+                    .contentType("application/json").status(404);
         }
     }
 }

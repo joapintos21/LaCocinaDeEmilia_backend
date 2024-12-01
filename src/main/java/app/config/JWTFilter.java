@@ -9,6 +9,7 @@ import org.javalite.activeweb.controller_filters.HttpSupportFilter;
 public class JWTFilter extends HttpSupportFilter {
 
     private static final Set<String> EXCLUDED_PATHS = Set.of(
+            "/hooks/handleWebhook",
             "/usuarios/create",
             "/usuarios/validarToken",
             "/login/iniciarSesion");

@@ -10,6 +10,7 @@ import org.json.JSONObject;
 @BelongsTo(parent = Cliente.class, foreignKeyName = "cliente_id")
 @HasMany(child = PedidoHistorico.class, foreignKeyName = "pedido_id")
 @HasMany(child = PedidoProducto.class, foreignKeyName = "pedido_id")
+@HasMany(child = Pago.class, foreignKeyName = "pedido_id")
 public class Pedido extends Model {
 
     static {
