@@ -14,111 +14,112 @@ import java.util.List;
 
 public class DireccionesController extends AppController {
 
-    // Crear una nueva dirección
     @POST
     public void create(Direccion direccion) {
         try {
+            // Validar si el cliente existe
+            if (Usuario.findFirst("id = ?", direccion.get("cliente_id")) == null) {
+                respond("{\"error\": \"El cliente no existe\"}").contentType("application/json").status(400);
+                return;
+            }
+
             if (direccion.saveIt()) {
                 respond(direccion.toJson().toString()).contentType("application/json").status(201);
             } else {
-                String errorJson = "{\"error\": " + direccion.errors().toJSON() + "}";
-                respond(errorJson).contentType("application/json").status(400);
+                respond(direccion.errors().toJSON().toString()).contentType("application/json").status(400);
             }
         } catch (Exception e) {
-            String errorJson = "{\"error\": \"" + e.getMessage() + "\"}";
-            respond(errorJson).contentType("application/json").status(500);
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}")
+                    .contentType("application/json").status(500);
         }
     }
 
-    // Actualizar una dirección existente
     @PUT
     public void update(Direccion newDireccion) {
-        int id = Integer.parseInt(param("id"));
-        Direccion direccion = Direccion.findById(id);
-
-        if (direccion != null) {
-            try {
-                direccion.fromMap(newDireccion.toMap());
-                if (direccion.saveIt()) {
-                    respond(direccion.toJson().toString()).contentType("application/json").status(200);
-                } else {
-                    respond(direccion.errors().toJSON()).contentType("application/json").status(400);
-                }
-            } catch (Exception e) {
-                respond("{\"error\": \"Error al actualizar la dirección\"}")
-                        .contentType("application/json").status(500);
+        String idParam = param("id");
+        if (idParam == null || idParam.isEmpty()) {
+            respond("{\"error\": \"El ID es requerido\"}").contentType("application/json").status(400);
+            return;
+        }
+        try {
+            int id = Integer.parseInt(idParam);
+            Direccion direccion = Direccion.findById(id);
+            if (direccion == null) {
+                respond("{\"error\": \"Dirección no encontrada\"}").contentType("application/json").status(404);
+                return;
             }
-        } else {
-            respond("{\"error\": \"Dirección no encontrada\"}")
-                    .contentType("application/json").status(404);
+            direccion.fromMap(newDireccion.toMap());
+            if (direccion.saveIt()) {
+                respond(direccion.toJson().toString()).contentType("application/json").status(200);
+            } else {
+                respond(direccion.errors().toJSON().toString()).contentType("application/json").status(400);
+            }
+        } catch (Exception e) {
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 
-    // Listar todas las direcciones de un cliente
     @GET
     public void index() {
-        int clienteId = Integer.parseInt(param("cliente_id"));
-        List<Direccion> direcciones = Direccion.where("cliente_id = ?", clienteId);
-
-        JSONArray jsonArray = new JSONArray();
-        direcciones.forEach(direccion -> jsonArray.put(direccion.toJson()));
-        respond(jsonArray.toString()).contentType("application/json").status(200);
-    }
-
-    // Obtener una dirección específica por ID
-    @GET
-    public void show() {
-        int id = Integer.parseInt(param("id"));
-        Direccion direccion = Direccion.findById(id);
-
-        if (direccion != null) {
-            respond(direccion.toJson().toString()).contentType("application/json").status(200);
-        } else {
-            respond("{\"error\": \"Dirección no encontrada\"}")
-                    .contentType("application/json").status(404);
+        String clienteIdParam = param("cliente_id");
+        if (clienteIdParam == null || clienteIdParam.isEmpty()) {
+            respond("{\"error\": \"cliente_id es requerido\"}").contentType("application/json").status(400);
+            return;
+        }
+        try {
+            int clienteId = Integer.parseInt(clienteIdParam);
+            List<Direccion> direcciones = Direccion.where("cliente_id = ?", clienteId);
+            JSONArray jsonArray = new JSONArray();
+            direcciones.forEach(direccion -> jsonArray.put(direccion.toJson()));
+            respond(jsonArray.toString()).contentType("application/json").status(200);
+        } catch (Exception e) {
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 
-    // Eliminar una dirección
     @DELETE
     public void delete() {
-        int id = Integer.parseInt(param("id"));
-        Direccion direccion = Direccion.findById(id);
-
-        if (direccion != null) {
+        String idParam = param("id");
+        if (idParam == null || idParam.isEmpty()) {
+            respond("{\"error\": \"El ID es requerido\"}").contentType("application/json").status(400);
+            return;
+        }
+        try {
+            int id = Integer.parseInt(idParam);
+            Direccion direccion = Direccion.findById(id);
+            if (direccion == null) {
+                respond("{\"error\": \"Dirección no encontrada\"}").contentType("application/json").status(404);
+                return;
+            }
             direccion.delete();
-            respond("{\"message\": \"Dirección eliminada correctamente\"}")
-                    .contentType("application/json").status(200);
-        } else {
-            respond("{\"error\": \"Dirección no encontrada\"}")
-                    .contentType("application/json").status(404);
+            respond("{\"message\": \"Dirección eliminada correctamente\"}").contentType("application/json").status(200);
+        } catch (Exception e) {
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 
-    // Establecer una dirección como predeterminada
     @PUT
     public void setDefault() {
-        int id = Integer.parseInt(param("id"));
-        Direccion direccion = Direccion.findById(id);
-
-        if (direccion != null) {
-            try {
-                // Desmarcar otras direcciones del cliente como predeterminadas
-                Direccion.update("predeterminado = false", "cliente_id = ?", direccion.get("cliente_id"));
-
-                // Establecer esta dirección como predeterminada
-                direccion.set("predeterminado", true);
-                direccion.saveIt();
-
-                respond("{\"message\": \"Dirección establecida como predeterminada\"}")
-                        .contentType("application/json").status(200);
-            } catch (Exception e) {
-                respond("{\"error\": \"Error al establecer la dirección como predeterminada\"}")
-                        .contentType("application/json").status(500);
+        String idParam = param("id");
+        if (idParam == null || idParam.isEmpty()) {
+            respond("{\"error\": \"El ID es requerido\"}").contentType("application/json").status(400);
+            return;
+        }
+        try {
+            int id = Integer.parseInt(idParam);
+            Direccion direccion = Direccion.findById(id);
+            if (direccion == null) {
+                respond("{\"error\": \"Dirección no encontrada\"}").contentType("application/json").status(404);
+                return;
             }
-        } else {
-            respond("{\"error\": \"Dirección no encontrada\"}")
-                    .contentType("application/json").status(404);
+            // Desmarcar otras direcciones como predeterminadas
+            Direccion.update("predeterminado = false", "cliente_id = ?", direccion.get("cliente_id"));
+            direccion.set("predeterminado", true);
+            direccion.saveIt();
+            respond(direccion.toJson().put("message", "Dirección establecida como predeterminada").toString())
+                    .contentType("application/json").status(200);
+        } catch (Exception e) {
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 }
