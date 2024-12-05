@@ -77,6 +77,43 @@ public class PedidosController extends AppController {
         respond(jsonArray.toString()).contentType("application/json");
     }
 
+    @GET
+    public void obtenerPedidosUsuario() {
+        int userId;
+        try {
+            // Obtener el userId del contexto
+            int userIdFromToken = (Integer) appContext().get("userId");
+            // Obtener el userId del parámetro
+            userId = Integer.parseInt(param("userId"));
+
+            // Validar que el userId del token coincida con el del parámetro
+            if (userIdFromToken != userId) {
+                respond("{\"error\": \"No tienes permiso para acceder a estos pedidos.\"}")
+                        .contentType("application/json")
+                        .status(403);
+                return;
+            }
+
+        } catch (NumberFormatException e) {
+            respond("{\"error\": \"El parámetro userId es inválido o no está presente.\"}")
+                    .contentType("application/json")
+                    .status(400);
+            return;
+        }
+        Cliente c = Cliente.findFirst("usuario_id = ?", userId);
+        // Busca los pedidos del usuario
+        List<Pedido> pedidos = Pedido.where("cliente_id = ?", c.getId());
+
+        // Convierte los pedidos a JSON
+        JSONArray pedidosJson = new JSONArray();
+        for (Pedido pedido : pedidos) {
+            pedidosJson.put(pedido.toJson());
+        }
+
+        // Responde con los pedidos
+        respond(pedidosJson.toString()).contentType("application/json").status(200);
+    }
+
     // Obtener un pedido por ID, incluyendo sus productos, packs y adicionales
     @GET
     public void show() {
