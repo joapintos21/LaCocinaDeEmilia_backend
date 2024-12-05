@@ -8,7 +8,7 @@ import org.json.JSONObject;
 public class Direccion extends Model {
 
     static {
-        validatePresenceOf("cliente_id", "titulo", "barrio");
+        validatePresenceOf("cliente_id", "titulo", "barrio","direccion");
     }
 
     public JSONObject toJson() {
@@ -17,6 +17,7 @@ public class Direccion extends Model {
         jsonObject.put("cliente_id", get("cliente_id"));
         jsonObject.put("titulo", get("titulo"));
         jsonObject.put("barrio", get("barrio"));
+        jsonObject.put("direccion", get("direccion"));
         jsonObject.put("latitud", get("latitud"));
         jsonObject.put("longitud", get("longitud"));
         jsonObject.put("predeterminado", get("predeterminado"));
