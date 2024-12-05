@@ -53,23 +53,19 @@ public class HooksController extends AppController {
             }
 
             // Actualizar el estado del pedido en base al estado del pago
-            if ("approved".equals(status)) {
+            if ("pending".equals(status) || "in_process".equals(status) || "approved".equals(status)) {
                 // Si el pago fue aprobado, mover el pedido a "LISTO_PARA_PREPARAR" (estado 2)
                 pedido.set("estado", 2);
-                System.out.println("Pago aprobado. Pedido marcado como LISTO_PARA_PREPARAR.");
-                status = "APROBADO";
-            } else if ("in_process".equals(status) || "rejected".equals(status)) {
-                // Si el pago está pendiente o rechazado, mantener el pedido en "EN_PROGRESO"
-                // (estado 1)
-                if ("in_process".equals(status)) {
-                    status = "PENDIENTE";
+                if ("approved".equals(status)) {
+                    status = "APROBADO";
                 } else {
-                    status = "RECHAZADO";
+                    status = "PENDIENTE";
                 }
+            } else {
                 pedido.set("estado", 1);
-                System.out.println("Pago " + status + ". Pedido permanece en EN_PROGRESO.");
+                status = "RECHAZADO";
             }
-
+            System.out.println("Pago " + status);
             // Guardar los cambios en el pedido
             pedido.saveIt();
 

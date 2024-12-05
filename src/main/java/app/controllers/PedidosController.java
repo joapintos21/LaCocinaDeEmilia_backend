@@ -3,6 +3,7 @@ package app.controllers;
 import app.models.Pedido;
 import app.models.Producto;
 import app.models.Pack;
+import app.models.Pago;
 import app.models.Adicional;
 import app.models.Cliente;
 import app.models.EstadoPedido;
@@ -18,6 +19,11 @@ import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.mercadopago.client.payment.PaymentClient;
+import com.mercadopago.exceptions.MPApiException;
+import com.mercadopago.resources.payment.Payment;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 public class PedidosController extends AppController {
@@ -205,16 +211,87 @@ public class PedidosController extends AppController {
 
     @PUT
     public void finalizarPedido() {
-        int pedidoId = Integer.parseInt(param("pedido_id"));
-        Pedido pedido = Pedido.findById(pedidoId);
+        JSONObject body = new JSONObject(getRequestString());
+        int pedidoId = body.getInt("pedido_id");
+        int metodoPagoId = body.getInt("metodo_pago_id");
+        String paymentId = body.getString("payment_id"); // Opcional
 
-        if (pedido != null && "PENDIENTE".equals(pedido.getString("estado"))) {
-            pedido.set("estado", "COMPLETADO"); // Cambiar el estado a COMPLETADO
-            pedido.saveIt();
-            respond("{\"message\": \"Pedido completado con éxito\"}").contentType("application/json").status(200);
-        } else {
-            respond("{\"error\": \"Pedido no encontrado o ya procesado\"}").contentType("application/json").status(404);
+        try {
+            // Buscar el pedido
+            Pedido pedido = Pedido.findFirst("id = ?", pedidoId);
+            if (pedido == null) {
+                respond("{\"error\": \"Pedido no encontrado\"}").contentType("application/json").status(404);
+                return;
+            }
+
+            // Verificar el método de pago
+            if (metodoPagoId == 1) {
+                // Transferencia: Crear el pago como pendiente
+                crearPago(pedido, metodoPagoId, "PENDIENTE", pedido.getBigDecimal("total"));
+                pedido.set("estado", 2); // LISTO_PARA_PREPARAR
+                pedido.saveIt();
+
+            } else if (metodoPagoId == 2) {
+                // Mercado Pago: Verificar el payment_id
+                Pago pagoExistente = Pago.findFirst("pedido_id = ? AND metodo_pago_id = ?", pedidoId, 2);
+                if (pagoExistente == null) {
+                    // Si no hay pagos registrados, consultar la API de Mercado Pago
+                    try {
+                        PaymentClient paymentClient = new PaymentClient();
+                        Payment payment = paymentClient.get(Long.parseLong(paymentId));
+
+                        String status = payment.getStatus(); // Estado del pago
+                        BigDecimal transactionAmount = payment.getTransactionAmount();
+
+                        if ("approved".equals(status)) {
+                            crearPago(pedido, metodoPagoId, "APROBADO", transactionAmount);
+                            pedido.set("estado", 2); // LISTO_PARA_PREPARAR
+                        } else if ("pending".equals(status)) {
+                            crearPago(pedido, metodoPagoId, "PENDIENTE", transactionAmount);
+                            pedido.set("estado", 1); // EN_PROGRESO
+                        } else {
+                            crearPago(pedido, metodoPagoId, "RECHAZADO", transactionAmount);
+                            pedido.set("estado", 1); // EN_PROGRESO
+                        }
+                    } catch (NumberFormatException e) {
+                        // El payment_id no es un número válido
+                        respond("{\"error\": \"El ID del pago no tiene un formato válido.\"}")
+                                .contentType("application/json").status(400);
+                        return;
+                    } catch (MPApiException e) {
+                        // La API de Mercado Pago devolvió un error (por ejemplo, el ID no existe)
+                        respond("{\"error\": \"El ID del pago no es válido o no existe en Mercado Pago.\"}")
+                                .contentType("application/json").status(404);
+                        return;
+                    } catch (Exception e) {
+                        // Manejo genérico de errores
+                        respond("{\"error\": \"Error al consultar el pago: " + e.getMessage() + "\"}")
+                                .contentType("application/json").status(500);
+                        return;
+                    }
+                }
+                pedido.saveIt();
+            } else {
+                respond("{\"error\": \"Método de pago no válido\"}").contentType("application/json").status(400);
+                return;
+            }
+
+            respond(new JSONObject(pedido.toMap()).toString()).contentType("application/json").status(200);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            respond("{\"error\": \"Error al finalizar el pedido: " + e.getMessage() + "\"}")
+                    .contentType("application/json").status(500);
         }
+    }
+
+    private void crearPago(Pedido pedido, Integer metodoPagoId, String estadoPago, BigDecimal monto) {
+        Pago pago = new Pago();
+        pago.set("pedido_id", pedido.getId());
+        pago.set("metodo_pago_id", metodoPagoId);
+        pago.set("monto", monto != null ? monto : BigDecimal.ZERO);
+        pago.set("estado_pago", estadoPago);
+        pago.saveIt();
     }
 
     @GET
