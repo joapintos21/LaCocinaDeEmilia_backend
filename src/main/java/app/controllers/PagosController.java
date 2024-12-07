@@ -9,7 +9,12 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.preference.Preference;
 
+import app.models.Pack;
 import app.models.Pago;
+import app.models.Pedido;
+import app.models.PedidoPack;
+import app.models.PedidoProducto;
+import app.models.Producto;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -61,28 +66,87 @@ public class PagosController extends AppController {
 	@POST
 	public void crearPreferencia() {
 		try {
+			int userIdFromToken = (Integer) appContext().get("userId");
 			JSONObject body = new JSONObject(getRequestString());
-			JSONArray itemsArray = body.getJSONArray("items");
 			JSONObject urls = body.getJSONObject("backUrls");
-			Integer userId = body.getInt("userId");
+			Integer direccionId = body.getInt("direccion_id");
+			BigDecimal costoEnvio = body.getBigDecimal("costo_envio");
+			int pedidoId = body.getInt("pedido_id");
+			int metodoPagoId = body.getInt("metodo_pago_id");
 			// Agrega credenciales
 			MercadoPagoConfig
 					.setAccessToken("APP_USR-411942404565714-112820-46da2a5cc4a2a44f087cb876ffa9eb84-2125634042");
 
+			// Recupera los productos y packs asociados al pedido
+			Pedido pedido = Pedido.findById(pedidoId);
+			if (pedido == null) {
+				respond("{\"error\": \"Pedido no encontrado.\"}")
+						.contentType("application/json")
+						.status(404);
+				return;
+			}
+
+			List<PedidoProducto> itemsProductos = PedidoProducto.where("pedido_id = ?", pedidoId);
+			List<PedidoPack> itemsPacks = PedidoPack.where("pedido_id = ?", pedidoId);
+			BigDecimal subtotal = BigDecimal.ZERO;
+
+			// Calcular subtotal, descuentos, y totales
+			JSONArray itemsArray = new JSONArray();
+			for (PedidoProducto item : itemsProductos) {
+				Producto p = Producto.findFirst("id = ?", item.get("producto_id"));
+				BigDecimal precioConDescuento = p.getPrecioTotalConDescuento();
+				subtotal = subtotal.add(precioConDescuento.multiply(BigDecimal.valueOf(item.getInteger("cantidad"))));
+
+				itemsArray.put(new JSONObject()
+						.put("title", p.getString("descripcion"))
+						.put("quantity", item.getInteger("cantidad"))
+						.put("unitPrice", precioConDescuento));
+			}
+
+			for (PedidoPack itemPack : itemsPacks) {
+				Pack p = Pack.findFirst("id = ?", itemPack.get("pack_id"));
+				BigDecimal precioConDescuento = p.getPrecioTotalConDescuento();
+				subtotal = subtotal
+						.add(precioConDescuento.multiply(BigDecimal.valueOf(itemPack.getInteger("cantidad"))));
+
+				itemsArray.put(new JSONObject()
+						.put("title", "Pack: " + p.getString("nombre"))
+						.put("quantity", itemPack.getInteger("cantidad"))
+						.put("unitPrice", precioConDescuento));
+			}
+
+			// Agregar costos de envío y comisiones
+			BigDecimal porcentajeComision = BigDecimal.valueOf(0.0599);
+			subtotal = subtotal.add(costoEnvio);
+			BigDecimal comision = subtotal.multiply(porcentajeComision);
+			// Agregar comisiones y costos de envío como items adicionales
+			itemsArray.put(new JSONObject()
+					.put("title", "Costo de envío")
+					.put("quantity", 1)
+					.put("unitPrice", costoEnvio));
+
+			itemsArray.put(new JSONObject()
+					.put("title", "Comisión por método de pago")
+					.put("quantity", 1)
+					.put("unitPrice", comision));
+			int counter = 0;
+			String itemId = "item-0";
 			List<PreferenceItemRequest> itemList = new ArrayList<>();
 			for (int i = 0; i < itemsArray.length(); i++) {
 				JSONObject jsonObject = itemsArray.getJSONObject(i);
 				PreferenceItemRequest item = PreferenceItemRequest.builder()
-						.id("1234")
+						.id(itemId)
 						.title(jsonObject.getString("title"))
 						.description(jsonObject.optString("description", "Sin descripción"))
 						.pictureUrl("http://picture.com/PS5")
 						.categoryId("games")
 						.quantity(jsonObject.getInt("quantity"))
-						.currencyId("BRL")
+						.currencyId("UYU")
 						.unitPrice(jsonObject.getBigDecimal("unitPrice"))
 						.build();
 				itemList.add(item);
+				counter++;
+				itemId = "item-" + counter;
 			}
 			PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
 					.success(urls.getString("success"))
@@ -94,7 +158,7 @@ public class PagosController extends AppController {
 			PreferenceRequest request = PreferenceRequest.builder()
 					.items(itemList)
 					.backUrls(backUrls)
-					.externalReference(Integer.toString(userId)) // Número de pedido interno
+					.externalReference(Integer.toString(userIdFromToken)) // Número de pedido interno
 					.notificationUrl(
 							"https://21d8-159-89-186-236.ngrok-free.app/hooks/handleWebhook")
 					.autoReturn("approved") // Retorno automático al éxito

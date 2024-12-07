@@ -6,6 +6,7 @@ import org.javalite.activejdbc.annotations.Table;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Table("aplicacion.Pack")
@@ -16,6 +17,10 @@ public class Pack extends Model {
     static {
         validatePresenceOf("nombre", "precio");
         validateNumericalityOf("precio").greaterThan(0);
+    }
+
+    public DescuentoPack getDescuento() {
+        return DescuentoPack.findFirst("pack_id = ?", this.getId());
     }
 
     // Formato JSON para Pack
@@ -82,5 +87,27 @@ public class Pack extends Model {
                 packProducto.delete();
             }
         }
+    }
+
+    public BigDecimal getPrecioTotalConDescuento() {
+        BigDecimal precioBase = this.getBigDecimal("precio");
+        BigDecimal totalDescuento = BigDecimal.ZERO;
+
+        DescuentoPack descuentoPack = this.getDescuento();
+        if (descuentoPack != null) {
+            Descuento descuento = Descuento.findById(descuentoPack.get("descuento_id"));
+            int tipo = descuento.getInteger("tipo_id");
+            TipoDescuento tipoDescuento = TipoDescuento.findFirst("id = ?", tipo);
+            BigDecimal valor = descuento.getBigDecimal("valor");
+
+            if ("PORCENTAJE".equalsIgnoreCase(tipoDescuento.getString("nombre"))) {
+                totalDescuento = totalDescuento.add(precioBase.multiply(valor));
+            } else if ("IMPORTE".equalsIgnoreCase(tipoDescuento.getString("nombre"))) {
+                totalDescuento = totalDescuento.add(valor);
+            }
+        }
+
+        BigDecimal precioFinal = precioBase.subtract(totalDescuento);
+        return precioFinal.compareTo(BigDecimal.ZERO) > 0 ? precioFinal : BigDecimal.ZERO;
     }
 }

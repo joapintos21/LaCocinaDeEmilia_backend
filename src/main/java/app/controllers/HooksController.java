@@ -56,6 +56,7 @@ public class HooksController extends AppController {
             if ("pending".equals(status) || "in_process".equals(status) || "approved".equals(status)) {
                 // Si el pago fue aprobado, mover el pedido a "LISTO_PARA_PREPARAR" (estado 2)
                 pedido.set("estado", 2);
+                pedido.set("total", transactionAmount);
                 if ("approved".equals(status)) {
                     status = "APROBADO";
                 } else {

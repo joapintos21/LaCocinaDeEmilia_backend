@@ -1,5 +1,6 @@
 package app.models;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.javalite.activejdbc.Model;
@@ -21,7 +22,29 @@ public class Producto extends Model {
     }
 
     public DescuentoProducto getDescuento() {
-        return this.parent(DescuentoProducto.class);
+        return DescuentoProducto.findFirst("producto_id = ?", this.getId());
+    }
+
+    public BigDecimal getPrecioTotalConDescuento() {
+        BigDecimal precioBase = this.getBigDecimal("precio");
+        BigDecimal totalDescuento = BigDecimal.ZERO;
+
+        DescuentoProducto descuentoProducto = this.getDescuento();
+        if (descuentoProducto != null) {
+            Descuento descuento = Descuento.findById(descuentoProducto.get("descuento_id"));
+            int tipo = descuento.getInteger("tipo_id");
+            TipoDescuento tipoDescuento = TipoDescuento.findFirst("id = ?", tipo);
+            BigDecimal valor = descuento.getBigDecimal("valor");
+
+            if ("PORCENTAJE".equalsIgnoreCase(tipoDescuento.getString("nombre"))) {
+                totalDescuento = totalDescuento.add(precioBase.multiply(valor));
+            } else if ("IMPORTE".equalsIgnoreCase(tipoDescuento.getString("nombre"))) {
+                totalDescuento = totalDescuento.add(valor);
+            }
+        }
+
+        BigDecimal precioFinal = precioBase.subtract(totalDescuento);
+        return precioFinal.compareTo(BigDecimal.ZERO) > 0 ? precioFinal : BigDecimal.ZERO;
     }
 
     // Formato JSON para Producto

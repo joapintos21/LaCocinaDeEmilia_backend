@@ -1,5 +1,8 @@
 package app.models;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.javalite.activejdbc.Model;
 import org.javalite.activejdbc.annotations.Table;
 import org.javalite.activejdbc.annotations.BelongsTo;
@@ -10,7 +13,9 @@ import org.json.JSONObject;
 @BelongsTo(parent = Cliente.class, foreignKeyName = "cliente_id")
 @HasMany(child = PedidoHistorico.class, foreignKeyName = "pedido_id")
 @HasMany(child = PedidoProducto.class, foreignKeyName = "pedido_id")
+@HasMany(child = PedidoPack.class, foreignKeyName = "pack_id")
 @HasMany(child = Pago.class, foreignKeyName = "pedido_id")
+@HasMany(child = PedidoDetalle.class, foreignKeyName = "pedido_id")
 public class Pedido extends Model {
 
     static {
@@ -73,5 +78,27 @@ public class Pedido extends Model {
             pedidoProductoAdicional.set("adicional_id", adicional.getId());
             pedidoProductoAdicional.saveIt();
         }
+    }
+
+    public List<Producto> obtenerProductos() {
+        // Busca todos los registros en PedidoProducto relacionados con este pedido
+        List<PedidoProducto> pedidoProductos = getAll(PedidoProducto.class);
+
+        // Mapea los productos desde la relación PedidoProducto
+        return pedidoProductos.stream()
+                .map(pedidoProducto -> (Producto) Producto.findById(pedidoProducto.get("producto_id")))
+                .filter(producto -> producto != null) // Filtra nulos en caso de inconsistencias en la base de datos
+                .collect(Collectors.toList()); // Convierte a una lista
+    }
+
+    public List<Pack> obtenerPacks() {
+        // Busca todos los registros en PedidoProducto relacionados con este pedido
+        List<PedidoPack> pedidoPacks = getAll(PedidoPack.class);
+
+        // Mapea los productos desde la relación PedidoProducto
+        return pedidoPacks.stream()
+                .map(pedidoPack -> (Pack) Pack.findById(pedidoPack.get("pack_id")))
+                .filter(pack -> pack != null) // Filtra nulos en caso de inconsistencias en la base de datos
+                .collect(Collectors.toList()); // Convierte a una lista
     }
 }
