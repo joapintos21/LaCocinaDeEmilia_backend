@@ -1,0 +1,3 @@
+UPDATE aplicacion.EstadoPedido
+SET nombre = 'LISTO_PARA_PREPARAR'
+WHERE nombre = 'PENDIENTE_CONFIRMACION_PAGO';

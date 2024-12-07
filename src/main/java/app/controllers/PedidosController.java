@@ -1,8 +1,10 @@
 package app.controllers;
 
 import app.models.Pedido;
+import app.models.PedidoDetalle;
 import app.models.Producto;
 import app.models.Pack;
+import app.models.Pago;
 import app.models.Adicional;
 import app.models.Cliente;
 import app.models.EstadoPedido;
@@ -18,6 +20,11 @@ import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.mercadopago.client.payment.PaymentClient;
+import com.mercadopago.exceptions.MPApiException;
+import com.mercadopago.resources.payment.Payment;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 public class PedidosController extends AppController {
@@ -69,6 +76,70 @@ public class PedidosController extends AppController {
         JSONArray jsonArray = new JSONArray();
         pedidos.forEach(pedido -> jsonArray.put(pedido.toJson()));
         respond(jsonArray.toString()).contentType("application/json");
+    }
+
+    @GET
+    public void obtenerPedidosUsuario() {
+        int userId;
+        try {
+            // Obtener el userId del contexto
+            int userIdFromToken = (Integer) appContext().get("userId");
+            // Obtener el userId del parámetro
+            userId = Integer.parseInt(param("userId"));
+
+            // Validar que el userId del token coincida con el del parámetro
+            if (userIdFromToken != userId) {
+                respond("{\"error\": \"No tienes permiso para acceder a estos pedidos.\"}")
+                        .contentType("application/json")
+                        .status(403);
+                return;
+            }
+
+        } catch (NumberFormatException e) {
+            respond("{\"error\": \"El parámetro userId es inválido o no está presente.\"}")
+                    .contentType("application/json")
+                    .status(400);
+            return;
+        }
+        // Obtener el cliente asociado al usuario
+        Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
+        if (cliente == null) {
+            respond("{\"error\": \"Cliente no encontrado.\"}")
+                    .contentType("application/json")
+                    .status(404);
+            return;
+        }
+
+        // Buscar los pedidos del cliente
+        List<Pedido> pedidos = Pedido.where("cliente_id = ?", cliente.getId());
+
+        // Construir la respuesta JSON con los detalles de los pedidos
+        JSONArray pedidosJson = new JSONArray();
+        for (Pedido pedido : pedidos) {
+            JSONObject pedidoJson = new JSONObject();
+            pedidoJson.put("id", pedido.getId());
+            pedidoJson.put("estado", pedido.get("estado"));
+            pedidoJson.put("total", pedido.get("total"));
+            pedidoJson.put("fechaCreacion", pedido.get("fechaCreacion"));
+
+            // Obtener los detalles del pedido
+            List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
+            JSONArray detallesJson = new JSONArray();
+            for (PedidoDetalle detalle : detalles) {
+                JSONObject detalleJson = new JSONObject();
+                detalleJson.put("descripcion", detalle.get("descripcion"));
+                detalleJson.put("cantidad", detalle.get("cantidad"));
+                detalleJson.put("precio_unitario", detalle.get("precio_unitario"));
+                detalleJson.put("subtotal", detalle.get("subtotal"));
+                detallesJson.put(detalleJson);
+            }
+            pedidoJson.put("detalles", detallesJson);
+
+            // Agregar el pedido al array de pedidos
+            pedidosJson.put(pedidoJson);
+        }
+        // Responde con los pedidos
+        respond(pedidosJson.toString()).contentType("application/json").status(200);
     }
 
     // Obtener un pedido por ID, incluyendo sus productos, packs y adicionales
@@ -205,15 +276,87 @@ public class PedidosController extends AppController {
 
     @PUT
     public void finalizarPedido() {
-        int pedidoId = Integer.parseInt(param("pedido_id"));
-        Pedido pedido = Pedido.findById(pedidoId);
+        JSONObject body = new JSONObject(getRequestString());
+        int pedidoId = body.getInt("pedido_id");
+        int metodoPagoId = body.getInt("metodo_pago_id");
+        String paymentId = body.getString("payment_id"); // Opcional
+        BigDecimal costoEnvio = body.getBigDecimal("costo_envio");
+        BigDecimal comision = BigDecimal.ZERO;
+        EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
 
-        if (pedido != null && "PENDIENTE".equals(pedido.getString("estado"))) {
-            pedido.set("estado", "COMPLETADO"); // Cambiar el estado a COMPLETADO
+        try {
+            // Buscar el pedido
+            Pedido pedido = Pedido.findFirst("id = ? AND estado = ?", pedidoId, estadoEnProgreso.getId());
+            if (pedido == null) {
+                respond("{\"error\": \"Pedido no encontrado\"}").contentType("application/json").status(404);
+                return;
+            }
+
+            // Verificar el método de pago
+            if (metodoPagoId == 1) {
+                // Transferencia: Crear el pago como pendiente
+                crearPago(pedido, metodoPagoId, "PENDIENTE", pedido.getBigDecimal("total"));
+                pedido.set("estado", 2); // LISTO_PARA_PREPARAR
+                pedido.saveIt();
+
+            } else if (metodoPagoId == 2) {
+                // Mercado Pago: Verificar el payment_id
+                Pago pagoExistente = Pago.findFirst("pedido_id = ? AND metodo_pago_id = ?", pedidoId, 2);
+                if (pagoExistente == null) {
+                    // Si no hay pagos registrados, consultar la API de Mercado Pago
+                    try {
+                        PaymentClient paymentClient = new PaymentClient();
+                        Payment payment = paymentClient.get(Long.parseLong(paymentId));
+
+                        String status = payment.getStatus(); // Estado del pago
+                        BigDecimal transactionAmount = payment.getTransactionAmount();
+                        pedido.set("total", transactionAmount);
+                        comision = new BigDecimal(5.99);
+                        if ("approved".equals(status)) {
+                            crearPago(pedido, metodoPagoId, "APROBADO", transactionAmount);
+                            pedido.set("estado", 2); // LISTO_PARA_PREPARAR
+                        } else if ("pending".equals(status)) {
+                            crearPago(pedido, metodoPagoId, "PENDIENTE", transactionAmount);
+                            pedido.set("estado", 1); // EN_PROGRESO
+                        } else {
+                            crearPago(pedido, metodoPagoId, "RECHAZADO", transactionAmount);
+                            pedido.set("estado", 1); // EN_PROGRESO
+                        }
+                    } catch (NumberFormatException e) {
+                        // El payment_id no es un número válido
+                        respond("{\"error\": \"El ID del pago no tiene un formato válido.\"}")
+                                .contentType("application/json").status(400);
+                        return;
+                    } catch (MPApiException e) {
+                        // La API de Mercado Pago devolvió un error (por ejemplo, el ID no existe)
+                        respond("{\"error\": \"El ID del pago no es válido o no existe en Mercado Pago.\"}")
+                                .contentType("application/json").status(404);
+                        return;
+                    } catch (Exception e) {
+                        // Manejo genérico de errores
+                        respond("{\"error\": \"Error al consultar el pago: " + e.getMessage() + "\"}")
+                                .contentType("application/json").status(500);
+                        return;
+                    }
+                }
+                pedido.saveIt();
+            } else {
+                respond("{\"error\": \"Método de pago no válido\"}").contentType("application/json").status(400);
+                return;
+            }
+
+            // Agregar detalles del pedido
+            agregarDetallesPedido(pedido, comision, costoEnvio);
+
+            // Guardar cambios en el pedido
             pedido.saveIt();
-            respond("{\"message\": \"Pedido completado con éxito\"}").contentType("application/json").status(200);
-        } else {
-            respond("{\"error\": \"Pedido no encontrado o ya procesado\"}").contentType("application/json").status(404);
+
+            respond(new JSONObject(pedido.toMap()).toString()).contentType("application/json").status(200);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            respond("{\"error\": \"Error al finalizar el pedido: " + e.getMessage() + "\"}")
+                    .contentType("application/json").status(500);
         }
     }
 
@@ -221,6 +364,7 @@ public class PedidosController extends AppController {
     public void obtenerPedidoEnProgreso() {
         int userId = Integer.parseInt(param("userId"));
         EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
+
         if (estadoEnProgreso == null) {
             respond("{\"error\": \"Estado 'EN_PROGRESO' no encontrado\"}")
                     .contentType("application/json").status(500);
@@ -228,6 +372,7 @@ public class PedidosController extends AppController {
         }
 
         Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
+
         if (cliente == null) {
             respond("{\"error\": \"Cliente no encontrado\"}")
                     .contentType("application/json").status(404);
@@ -235,6 +380,7 @@ public class PedidosController extends AppController {
         }
 
         Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?", cliente.getId(), estadoEnProgreso.getId());
+
         if (pedido != null) {
             // Crear un objeto JSON manualmente para el pedido
             JSONObject pedidoJson = new JSONObject();
@@ -286,8 +432,85 @@ public class PedidosController extends AppController {
             }
             pedidoJson.put("packs", packsJsonArray);
 
-            // Enviar la respuesta JSON completa
+            // Responder con el JSON completo
             respond(pedidoJson.toString()).contentType("application/json").status(200);
+        } else {
+            respond("{\"error\": \"No hay pedidos en curso.\"}")
+                    .contentType("application/json").status(404);
         }
+    }
+
+    private void crearPago(Pedido pedido, Integer metodoPagoId, String estadoPago, BigDecimal monto) {
+        Pago pago = new Pago();
+        pago.set("pedido_id", pedido.getId());
+        pago.set("metodo_pago_id", metodoPagoId);
+        pago.set("monto", monto != null ? monto : BigDecimal.ZERO);
+        pago.set("estado_pago", estadoPago);
+        pago.saveIt();
+    }
+
+    private void agregarDetallesPedido(Pedido pedido, BigDecimal comision, BigDecimal costoEnvio) {
+        BigDecimal total = BigDecimal.ZERO;
+        // Agregar detalles para los productos
+        List<PedidoProducto> pedidoProductos = PedidoProducto.where("pedido_id = ?", pedido.getId());
+        for (PedidoProducto pedidoProducto : pedidoProductos) {
+            Producto producto = Producto.findById(pedidoProducto.get("producto_id"));
+            if (producto != null) {
+                PedidoDetalle detalle = new PedidoDetalle();
+                detalle.set("pedido_id", pedido.getId());
+                detalle.set("descripcion", producto.get("descripcion"));
+                detalle.set("cantidad", pedidoProducto.get("cantidad"));
+                detalle.set("precio_unitario", producto.getPrecioTotalConDescuento());
+                detalle.set("subtotal", producto.getPrecioTotalConDescuento()
+                        .multiply(new BigDecimal(pedidoProducto.getInteger("cantidad"))));
+                detalle.saveIt();
+                total = total.add(producto.getPrecioTotalConDescuento()
+                        .multiply(new BigDecimal(pedidoProducto.getInteger("cantidad"))));
+            }
+        }
+
+        // Agregar detalles para los packs
+        List<PedidoPack> pedidoPacks = PedidoPack.where("pedido_id = ?", pedido.getId());
+        for (PedidoPack pedidoPack : pedidoPacks) {
+            Pack pack = Pack.findById(pedidoPack.get("pack_id"));
+            if (pack != null) {
+                PedidoDetalle detalle = new PedidoDetalle();
+                detalle.set("pedido_id", pedido.getId());
+                detalle.set("descripcion", pack.get("nombre"));
+                detalle.set("cantidad", pedidoPack.get("cantidad"));
+                detalle.set("precio_unitario", pack.getPrecioTotalConDescuento());
+                detalle.set("subtotal", pack.getPrecioTotalConDescuento()
+                        .multiply(new BigDecimal(pedidoPack.getInteger("cantidad"))));
+                detalle.saveIt();
+                total = total.add(pack.getPrecioTotalConDescuento()
+                        .multiply(new BigDecimal(pedidoPack.getInteger("cantidad"))));
+            }
+        }
+
+        // Agregar detalle para el envío, si aplica
+        if (costoEnvio != null && costoEnvio.compareTo(BigDecimal.ZERO) > 0) {
+            PedidoDetalle envioDetalle = new PedidoDetalle();
+            envioDetalle.set("pedido_id", pedido.getId());
+            envioDetalle.set("descripcion", "Envío");
+            envioDetalle.set("cantidad", 1); // Siempre 1 para servicios como envío
+            envioDetalle.set("precio_unitario", costoEnvio);
+            envioDetalle.set("subtotal", costoEnvio);
+            envioDetalle.saveIt();
+            total = total.add(costoEnvio);
+        }
+
+        // Agregar detalle para la comisión de Mercado Pago, si aplica
+        if (comision != null && comision.compareTo(BigDecimal.ZERO) > 0) {
+            PedidoDetalle comisionDetalle = new PedidoDetalle();
+            BigDecimal com = total.multiply(comision.divide(new BigDecimal(100)));
+            comisionDetalle.set("pedido_id", pedido.getId());
+            comisionDetalle.set("descripcion", "Comisión Mercado Pago");
+            comisionDetalle.set("cantidad", 1); // Siempre 1 para servicios como comisión
+            comisionDetalle.set("precio_unitario", com);
+            comisionDetalle.set("subtotal", com);
+            comisionDetalle.saveIt();
+            total = total.add(com);
+        }
+        pedido.set("total", total);
     }
 }

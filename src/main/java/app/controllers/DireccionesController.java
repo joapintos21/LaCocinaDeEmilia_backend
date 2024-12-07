@@ -1,14 +1,13 @@
 package app.controllers;
 
+import app.models.Cliente;
 import app.models.Direccion;
-import app.models.Usuario;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.POST;
 import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.util.List;
 
@@ -18,7 +17,7 @@ public class DireccionesController extends AppController {
     public void create(Direccion direccion) {
         try {
             // Validar si el cliente existe
-            if (Usuario.findFirst("id = ?", direccion.get("cliente_id")) == null) {
+            if (Cliente.findFirst("id = ?", direccion.get("cliente_id")) == null) {
                 respond("{\"error\": \"El cliente no existe\"}").contentType("application/json").status(400);
                 return;
             }
@@ -55,7 +54,8 @@ public class DireccionesController extends AppController {
                 respond(direccion.errors().toJSON().toString()).contentType("application/json").status(400);
             }
         } catch (Exception e) {
-            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json")
+                    .status(500);
         }
     }
 
@@ -68,12 +68,14 @@ public class DireccionesController extends AppController {
         }
         try {
             int clienteId = Integer.parseInt(clienteIdParam);
-            List<Direccion> direcciones = Direccion.where("cliente_id = ?", clienteId);
+            Cliente c = Cliente.findFirst("usuario_id = ?", clienteId);
+            List<Direccion> direcciones = Direccion.where("cliente_id = ?", c.getId());
             JSONArray jsonArray = new JSONArray();
             direcciones.forEach(direccion -> jsonArray.put(direccion.toJson()));
             respond(jsonArray.toString()).contentType("application/json").status(200);
         } catch (Exception e) {
-            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json")
+                    .status(500);
         }
     }
 
@@ -94,7 +96,8 @@ public class DireccionesController extends AppController {
             direccion.delete();
             respond("{\"message\": \"Dirección eliminada correctamente\"}").contentType("application/json").status(200);
         } catch (Exception e) {
-            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json")
+                    .status(500);
         }
     }
 
@@ -119,7 +122,8 @@ public class DireccionesController extends AppController {
             respond(direccion.toJson().put("message", "Dirección establecida como predeterminada").toString())
                     .contentType("application/json").status(200);
         } catch (Exception e) {
-            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json")
+                    .status(500);
         }
     }
 }
