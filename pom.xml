@@ -220,6 +220,11 @@
             <artifactId>sdk-java</artifactId>
             <version>2.1.29</version>
         </dependency>
+        <dependency>
+            <groupId>net.postgis</groupId>
+            <artifactId>postgis-jdbc</artifactId>
+            <version>2024.1.0</version>
+        </dependency>
       </dependencies>
 
 </project>

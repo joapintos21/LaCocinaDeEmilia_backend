@@ -9,6 +9,7 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.preference.Preference;
 
+import app.models.Direccion;
 import app.models.Pack;
 import app.models.Pago;
 import app.models.Pedido;
@@ -70,9 +71,7 @@ public class PagosController extends AppController {
 			JSONObject body = new JSONObject(getRequestString());
 			JSONObject urls = body.getJSONObject("backUrls");
 			Integer direccionId = body.getInt("direccion_id");
-			BigDecimal costoEnvio = body.getBigDecimal("costo_envio");
 			int pedidoId = body.getInt("pedido_id");
-			int metodoPagoId = body.getInt("metodo_pago_id");
 			// Agrega credenciales
 			MercadoPagoConfig
 					.setAccessToken("APP_USR-411942404565714-112820-46da2a5cc4a2a44f087cb876ffa9eb84-2125634042");
@@ -85,6 +84,17 @@ public class PagosController extends AppController {
 						.status(404);
 				return;
 			}
+			Direccion d = Direccion.findFirst("id = ?", direccionId);
+
+			if (d == null) {
+				respond("{\"error\": \"Direccion no encontrada.\"}")
+						.contentType("application/json")
+						.status(404);
+				return;
+			}
+
+			double envio = d.calcularCostoEnvio();
+			BigDecimal costoEnvio = envio > 0 ? BigDecimal.valueOf(envio) : BigDecimal.ZERO;
 
 			List<PedidoProducto> itemsProductos = PedidoProducto.where("pedido_id = ?", pedidoId);
 			List<PedidoPack> itemsPacks = PedidoPack.where("pedido_id = ?", pedidoId);
@@ -160,7 +170,7 @@ public class PagosController extends AppController {
 					.backUrls(backUrls)
 					.externalReference(Integer.toString(userIdFromToken)) // Número de pedido interno
 					.notificationUrl(
-							"https://21d8-159-89-186-236.ngrok-free.app/hooks/handleWebhook")
+							"https://32ef-2800-a4-29f8-a300-c5a7-5312-e5b7-6c8c.ngrok-free.app/hooks/handleWebhook")
 					.autoReturn("approved") // Retorno automático al éxito
 					.build();
 

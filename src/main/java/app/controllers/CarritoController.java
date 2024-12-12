@@ -67,7 +67,7 @@ public class CarritoController extends AppController {
         }
 
         // Responder con un mensaje de éxito
-        respond("{\"message\": \"Producto agregado al pedido\"}")
+        respond("{\"message\": \"Producto agregado al pedido\", \"pedido_id\": " + pedido.getId() + "}")
                 .contentType("application/json").status(200);
     }
 
@@ -189,7 +189,7 @@ public class CarritoController extends AppController {
         }
 
         // Responder con éxito
-        respond("{\"message\": \"Pack agregado al pedido\"}")
+        respond("{\"message\": \"Pack agregado al pedido\", \"pedido_id\": " + pedido.getId() + "}")
                 .contentType("application/json").status(200);
     }
 

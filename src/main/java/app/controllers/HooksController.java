@@ -9,6 +9,7 @@ import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.resources.payment.Payment;
 
 import app.models.Cliente;
+import app.models.Envio;
 import app.models.Pago;
 import app.models.Pedido;
 
@@ -28,7 +29,7 @@ public class HooksController extends AppController {
         PaymentClient paymentClient = new PaymentClient();
         try {
             Payment payment = paymentClient.get(paymentId);
-
+            BigDecimal comision = BigDecimal.ZERO;
             String status = payment.getStatus(); // Estado del pago
             String externalReference = payment.getExternalReference(); // ID del usuario asociado
             BigDecimal transactionAmount = payment.getTransactionAmount(); // Monto total del pago
@@ -67,7 +68,11 @@ public class HooksController extends AppController {
                 status = "RECHAZADO";
             }
             System.out.println("Pago " + status);
-            // Guardar los cambios en el pedido
+            Envio envio = Envio.findFirst("pedido_id = ?", pedido.getId());
+            comision = new BigDecimal(5.99);
+            // Agregar detalles del pedido
+            pedido.agregarDetallesPedido(comision, envio.getBigDecimal("costo"));
+
             pedido.saveIt();
 
             // Opcional: Registrar detalles del pago en una tabla de pagos
