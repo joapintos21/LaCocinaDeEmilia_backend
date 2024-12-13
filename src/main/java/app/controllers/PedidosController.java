@@ -7,11 +7,13 @@ import app.models.Pack;
 import app.models.Pago;
 import app.models.Adicional;
 import app.models.Cliente;
+import app.models.Envio;
 import app.models.EstadoPedido;
 import app.models.PedidoProducto;
 import app.models.PedidoHistorico;
 import app.models.PedidoPack;
 import app.models.Usuario;
+
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
@@ -111,7 +113,7 @@ public class PedidosController extends AppController {
         }
 
         // Buscar los pedidos del cliente
-        List<Pedido> pedidos = Pedido.where("cliente_id = ?", cliente.getId());
+        List<Pedido> pedidos = Pedido.where("cliente_id = ? and estado > 1", cliente.getId()).orderBy("id DESC");
 
         // Construir la respuesta JSON con los detalles de los pedidos
         JSONArray pedidosJson = new JSONArray();
@@ -122,6 +124,13 @@ public class PedidosController extends AppController {
             pedidoJson.put("total", pedido.get("total"));
             pedidoJson.put("fechaCreacion", pedido.get("fechaCreacion"));
 
+            // Obtener el estado de pago asociado al pedido
+            Pago pago = Pago.findFirst("pedido_id = ? order by fecha_pago DESC", pedido.getId());
+            if (pago != null) {
+                pedidoJson.put("estado_pago", pago.get("estado_pago")); // Agrega el estado de pago
+            } else {
+                pedidoJson.put("estado_pago", "SIN_PAGO"); // Valor predeterminado si no hay pago registrado
+            }
             // Obtener los detalles del pedido
             List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
             JSONArray detallesJson = new JSONArray();
@@ -280,7 +289,6 @@ public class PedidosController extends AppController {
         int pedidoId = body.getInt("pedido_id");
         int metodoPagoId = body.getInt("metodo_pago_id");
         String paymentId = body.getString("payment_id"); // Opcional
-        BigDecimal costoEnvio = body.getBigDecimal("costo_envio");
         BigDecimal comision = BigDecimal.ZERO;
         EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
 
@@ -291,6 +299,8 @@ public class PedidosController extends AppController {
                 respond("{\"error\": \"Pedido no encontrado\"}").contentType("application/json").status(404);
                 return;
             }
+
+            Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
 
             // Verificar el método de pago
             if (metodoPagoId == 1) {
@@ -315,9 +325,9 @@ public class PedidosController extends AppController {
                         if ("approved".equals(status)) {
                             crearPago(pedido, metodoPagoId, "APROBADO", transactionAmount);
                             pedido.set("estado", 2); // LISTO_PARA_PREPARAR
-                        } else if ("pending".equals(status)) {
+                        } else if ("pending".equals(status) || "in_process".equals(status)) {
                             crearPago(pedido, metodoPagoId, "PENDIENTE", transactionAmount);
-                            pedido.set("estado", 1); // EN_PROGRESO
+                            pedido.set("estado", 2); // LISTO_PARA_PREPARAR
                         } else {
                             crearPago(pedido, metodoPagoId, "RECHAZADO", transactionAmount);
                             pedido.set("estado", 1); // EN_PROGRESO
@@ -346,7 +356,7 @@ public class PedidosController extends AppController {
             }
 
             // Agregar detalles del pedido
-            agregarDetallesPedido(pedido, comision, costoEnvio);
+            pedido.agregarDetallesPedido(comision, envio.getBigDecimal("costo"));
 
             // Guardar cambios en el pedido
             pedido.saveIt();
@@ -447,70 +457,5 @@ public class PedidosController extends AppController {
         pago.set("monto", monto != null ? monto : BigDecimal.ZERO);
         pago.set("estado_pago", estadoPago);
         pago.saveIt();
-    }
-
-    private void agregarDetallesPedido(Pedido pedido, BigDecimal comision, BigDecimal costoEnvio) {
-        BigDecimal total = BigDecimal.ZERO;
-        // Agregar detalles para los productos
-        List<PedidoProducto> pedidoProductos = PedidoProducto.where("pedido_id = ?", pedido.getId());
-        for (PedidoProducto pedidoProducto : pedidoProductos) {
-            Producto producto = Producto.findById(pedidoProducto.get("producto_id"));
-            if (producto != null) {
-                PedidoDetalle detalle = new PedidoDetalle();
-                detalle.set("pedido_id", pedido.getId());
-                detalle.set("descripcion", producto.get("descripcion"));
-                detalle.set("cantidad", pedidoProducto.get("cantidad"));
-                detalle.set("precio_unitario", producto.getPrecioTotalConDescuento());
-                detalle.set("subtotal", producto.getPrecioTotalConDescuento()
-                        .multiply(new BigDecimal(pedidoProducto.getInteger("cantidad"))));
-                detalle.saveIt();
-                total = total.add(producto.getPrecioTotalConDescuento()
-                        .multiply(new BigDecimal(pedidoProducto.getInteger("cantidad"))));
-            }
-        }
-
-        // Agregar detalles para los packs
-        List<PedidoPack> pedidoPacks = PedidoPack.where("pedido_id = ?", pedido.getId());
-        for (PedidoPack pedidoPack : pedidoPacks) {
-            Pack pack = Pack.findById(pedidoPack.get("pack_id"));
-            if (pack != null) {
-                PedidoDetalle detalle = new PedidoDetalle();
-                detalle.set("pedido_id", pedido.getId());
-                detalle.set("descripcion", pack.get("nombre"));
-                detalle.set("cantidad", pedidoPack.get("cantidad"));
-                detalle.set("precio_unitario", pack.getPrecioTotalConDescuento());
-                detalle.set("subtotal", pack.getPrecioTotalConDescuento()
-                        .multiply(new BigDecimal(pedidoPack.getInteger("cantidad"))));
-                detalle.saveIt();
-                total = total.add(pack.getPrecioTotalConDescuento()
-                        .multiply(new BigDecimal(pedidoPack.getInteger("cantidad"))));
-            }
-        }
-
-        // Agregar detalle para el envío, si aplica
-        if (costoEnvio != null && costoEnvio.compareTo(BigDecimal.ZERO) > 0) {
-            PedidoDetalle envioDetalle = new PedidoDetalle();
-            envioDetalle.set("pedido_id", pedido.getId());
-            envioDetalle.set("descripcion", "Envío");
-            envioDetalle.set("cantidad", 1); // Siempre 1 para servicios como envío
-            envioDetalle.set("precio_unitario", costoEnvio);
-            envioDetalle.set("subtotal", costoEnvio);
-            envioDetalle.saveIt();
-            total = total.add(costoEnvio);
-        }
-
-        // Agregar detalle para la comisión de Mercado Pago, si aplica
-        if (comision != null && comision.compareTo(BigDecimal.ZERO) > 0) {
-            PedidoDetalle comisionDetalle = new PedidoDetalle();
-            BigDecimal com = total.multiply(comision.divide(new BigDecimal(100)));
-            comisionDetalle.set("pedido_id", pedido.getId());
-            comisionDetalle.set("descripcion", "Comisión Mercado Pago");
-            comisionDetalle.set("cantidad", 1); // Siempre 1 para servicios como comisión
-            comisionDetalle.set("precio_unitario", com);
-            comisionDetalle.set("subtotal", com);
-            comisionDetalle.saveIt();
-            total = total.add(com);
-        }
-        pedido.set("total", total);
     }
 }
