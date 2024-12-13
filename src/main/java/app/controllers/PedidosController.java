@@ -113,7 +113,7 @@ public class PedidosController extends AppController {
         }
 
         // Buscar los pedidos del cliente
-        List<Pedido> pedidos = Pedido.where("cliente_id = ?", cliente.getId()).orderBy("id DESC");
+        List<Pedido> pedidos = Pedido.where("cliente_id = ? and estado > 1", cliente.getId()).orderBy("id DESC");
 
         // Construir la respuesta JSON con los detalles de los pedidos
         JSONArray pedidosJson = new JSONArray();
