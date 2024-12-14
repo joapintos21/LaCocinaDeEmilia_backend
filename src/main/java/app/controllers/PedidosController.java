@@ -526,7 +526,7 @@ public void reasignarPedido() {
 
         Pedido pedido = Pedido.findById(pedidoId);
         if (pedido != null) {
-            pedido.set("cocinera_asignada", nuevaCocineraId); // Actualizar cocinera asignada
+            pedido.set("cocinera_asignada", nuevaCocineraId);
             pedido.saveIt();
             respond("{\"message\": \"Pedido reasignado exitosamente.\"}")
                     .contentType("application/json").status(200);
@@ -548,7 +548,7 @@ public void marcarComoTerminado() {
 
         Pedido pedido = Pedido.findById(pedidoId);
         if (pedido != null) {
-            pedido.set("estado", 3); // Estado 3 significa "terminado"
+            pedido.set("estado", 3);
             pedido.saveIt();
             respond("{\"message\": \"Pedido marcado como terminado.\"}")
                     .contentType("application/json").status(200);
