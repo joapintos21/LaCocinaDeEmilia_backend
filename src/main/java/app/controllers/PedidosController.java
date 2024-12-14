@@ -14,6 +14,7 @@ import app.models.PedidoHistorico;
 import app.models.PedidoPack;
 import app.models.Usuario;
 
+
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
@@ -28,6 +29,8 @@ import com.mercadopago.resources.payment.Payment;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.sql.Date;
 
 public class PedidosController extends AppController {
 
@@ -52,8 +55,7 @@ public class PedidosController extends AppController {
     public void updateStatus() {
         int id = Integer.parseInt(param("id"));
         String estadoNuevo = param("estado");
-        Usuario usuario = Usuario.findById(Integer.parseInt(param("usuario_id"))); // Obtener el usuario que realiza el
-                                                                                   // cambio
+        Usuario usuario = Usuario.findById(Integer.parseInt(param("usuario_id")));
         Pedido pedido = Pedido.findById(id);
 
         if (pedido != null && usuario != null) {
@@ -449,6 +451,116 @@ public class PedidosController extends AppController {
                     .contentType("application/json").status(404);
         }
     }
+
+@GET
+public void obtenerPedidosParaCocinera() {
+    try {
+        int userId = Integer.parseInt(param("usuario_id"));
+        Date fechaHoy = Date.valueOf(java.time.LocalDate.now());
+
+        List<Pedido> pedidosHoy = Pedido.where(
+            "CAST(fecha_entrega AS DATE) = ? AND estado = ?", fechaHoy, 2
+        );
+
+        List<Pedido> pedidosPosteriores = Pedido.where(
+            "CAST(fecha_entrega AS DATE) > ? AND estado = ?", fechaHoy, 2
+        );
+
+        JSONObject response = new JSONObject();
+        response.put("pedidosHoy", pedidosHoy.stream().map(pedido -> {
+            JSONObject pedidoJson = pedido.toJson();
+            
+            // Incluir detalles de productos
+            List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
+            JSONArray detallesJson = new JSONArray();
+            for (PedidoDetalle detalle : detalles) {
+                JSONObject detalleJson = new JSONObject();
+                detalleJson.put("descripcion", detalle.get("descripcion"));
+                detalleJson.put("cantidad", detalle.get("cantidad"));
+                detalleJson.put("subtotal", detalle.get("subtotal"));
+                detallesJson.put(detalleJson);
+            }
+            pedidoJson.put("detalles", detallesJson);
+
+            if (!pedidoJson.has("cocinera_asignada")) {
+                pedidoJson.put("cocinera_asignada", JSONObject.NULL);
+            }
+            return pedidoJson;
+        }).collect(Collectors.toList()));
+
+        response.put("pedidosPosteriores", pedidosPosteriores.stream().map(pedido -> {
+            JSONObject pedidoJson = pedido.toJson();
+
+            List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
+            JSONArray detallesJson = new JSONArray();
+            for (PedidoDetalle detalle : detalles) {
+                JSONObject detalleJson = new JSONObject();
+                detalleJson.put("descripcion", detalle.get("descripcion"));
+                detalleJson.put("cantidad", detalle.get("cantidad"));
+                detalleJson.put("subtotal", detalle.get("subtotal"));
+                detallesJson.put(detalleJson);
+            }
+            pedidoJson.put("detalles", detallesJson);
+
+            if (!pedidoJson.has("cocinera_asignada")) {
+                pedidoJson.put("cocinera_asignada", JSONObject.NULL);
+            }
+
+            pedidoJson.put("fecha_entrega", pedido.get("fecha_entrega"));
+            return pedidoJson;
+        }).collect(Collectors.toList()));
+
+        respond(response.toString()).contentType("application/json").status(200);
+    } catch (Exception e) {
+        respond("{\"error\": \"Error al obtener pedidos: " + e.getMessage() + "\"}")
+            .contentType("application/json").status(500);
+    }
+}
+
+@PUT
+public void reasignarPedido() {
+    try {
+        JSONObject body = new JSONObject(getRequestString());
+        int pedidoId = body.getInt("pedido_id");
+        int nuevaCocineraId = body.getInt("nueva_cocinera_id");
+
+        Pedido pedido = Pedido.findById(pedidoId);
+        if (pedido != null) {
+            pedido.set("cocinera_asignada", nuevaCocineraId); // Actualizar cocinera asignada
+            pedido.saveIt();
+            respond("{\"message\": \"Pedido reasignado exitosamente.\"}")
+                    .contentType("application/json").status(200);
+        } else {
+            respond("{\"error\": \"Pedido no encontrado.\"}")
+                    .contentType("application/json").status(404);
+        }
+    } catch (Exception e) {
+        respond("{\"error\": \"Error al reasignar pedido: " + e.getMessage() + "\"}")
+                .contentType("application/json").status(500);
+    }
+}
+
+@PUT
+public void marcarComoTerminado() {
+    try {
+        JSONObject body = new JSONObject(getRequestString());
+        int pedidoId = body.getInt("pedido_id");
+
+        Pedido pedido = Pedido.findById(pedidoId);
+        if (pedido != null) {
+            pedido.set("estado", 3); // Estado 3 significa "terminado"
+            pedido.saveIt();
+            respond("{\"message\": \"Pedido marcado como terminado.\"}")
+                    .contentType("application/json").status(200);
+        } else {
+            respond("{\"error\": \"Pedido no encontrado.\"}")
+                    .contentType("application/json").status(404);
+        }
+    } catch (Exception e) {
+        respond("{\"error\": \"Error al marcar pedido como terminado: " + e.getMessage() + "\"}")
+                .contentType("application/json").status(500);
+    }
+}
 
     private void crearPago(Pedido pedido, Integer metodoPagoId, String estadoPago, BigDecimal monto) {
         Pago pago = new Pago();

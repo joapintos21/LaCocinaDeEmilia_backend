@@ -32,7 +32,7 @@ public class Pedido extends Model {
         jsonObject.put("metodo_pago", get("metodo_pago"));
         jsonObject.put("total", get("total"));
         jsonObject.put("fechaCreacion", get("fechaCreacion"));
-
+        jsonObject.put("cocinera_asignada", get("cocinera_asignada"));
         // // Agregar productos
         // JSONArray productosArray = new JSONArray();
         // List<Producto> productos = getAll(Producto.class);
