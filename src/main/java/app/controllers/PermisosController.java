@@ -1,6 +1,7 @@
 package app.controllers;
 
-import app.models.Permiso;
+import java.util.List;
+
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
@@ -9,7 +10,7 @@ import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.List;
+import app.models.Permiso;
 
 public class PermisosController extends AppController {
 
@@ -108,6 +109,15 @@ public class PermisosController extends AppController {
         responseJson.put("permisos", permisosArray);
 
         respond(responseJson.toString()).contentType("application/json").status(200);
+    }
+
+    // Obtener todos los descuentos
+    @GET
+    public void index() {
+        List<Permiso> permisos = Permiso.findAll();
+        JSONArray jsonArray = new JSONArray();
+        permisos.forEach(permiso -> jsonArray.put(permiso.toBeautifyJson()));
+        respond(jsonArray.toString()).contentType("application/json");
     }
 
     @PUT

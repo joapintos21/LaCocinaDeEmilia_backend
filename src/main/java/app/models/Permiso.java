@@ -23,6 +23,23 @@ public class Permiso extends Model {
         return false;
     }
 
+    public static String formatText(String texto) {
+        if (texto == null || texto.isEmpty()) {
+            return "";
+        }
+        // Convertir la primera letra a mayúscula y el resto a minúsculas
+        return texto.substring(0, 1).toUpperCase() + texto.substring(1).toLowerCase();
+    }
+
+    public JSONObject toBeautifyJson() {
+        JSONObject json = new JSONObject();
+        json.put("id", getId());
+        json.put("rol", Rol.findById(get("rol_id")).get("nombre"));
+        json.put("endpoint", formatText(get("endpoint").toString()));
+        json.put("tipo", formatText(get("tipo").toString()));
+        return json;
+    }
+
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         json.put("id", getId());
