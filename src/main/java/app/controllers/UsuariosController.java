@@ -1,9 +1,8 @@
 package app.controllers;
 
-import app.models.Usuario;
-import app.services.EmailService;
 import java.util.List;
 import java.util.Map;
+
 import org.javalite.activejdbc.Base;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
@@ -11,6 +10,10 @@ import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.POST;
 import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
+
+import app.models.Rol;
+import app.models.Usuario;
+import app.services.EmailService;
 
 public class UsuariosController extends AppController {
 
@@ -115,6 +118,15 @@ public class UsuariosController extends AppController {
         });
         String json = jsonArray.toString();
         respond(json).contentType("application/json");
+    }
+
+    // Obtener todos los tipos de roles de usuarios
+    @GET
+    public void roles() {
+        List<Rol> roles = Rol.findAll();
+        JSONArray jsonArray = new JSONArray();
+        roles.forEach(rol -> jsonArray.put(rol.toJson()));
+        respond(jsonArray.toString()).contentType("application/json");
     }
 
     // Obtener un usuario por ID
