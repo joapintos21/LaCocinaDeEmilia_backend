@@ -17,7 +17,8 @@ public class JWTFilter extends HttpSupportFilter {
     private static final Set<String> EXCLUDED_CONTROLLER_PATHS = Set.of(
             "/productos",
             "/categorias",
-            "/packs");
+            "/packs",
+            "/reporte");
 
     @Override
     public void before() {
