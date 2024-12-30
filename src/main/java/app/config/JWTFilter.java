@@ -12,7 +12,8 @@ public class JWTFilter extends HttpSupportFilter {
             "/hooks/handleWebhook",
             "/usuarios/create",
             "/usuarios/validarToken",
-            "/login/iniciarSesion");
+            "/login/iniciarSesion",
+            "instagram/obtenerMedia");
 
     private static final Set<String> EXCLUDED_CONTROLLER_PATHS = Set.of(
             "/productos",

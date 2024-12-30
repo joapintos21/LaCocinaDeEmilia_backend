@@ -10,6 +10,7 @@ import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.preference.Preference;
 
 import app.models.Direccion;
+import app.models.Envio;
 import app.models.Pack;
 import app.models.Pago;
 import app.models.Pedido;
@@ -18,6 +19,8 @@ import app.models.PedidoProducto;
 import app.models.Producto;
 
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,6 +75,7 @@ public class PagosController extends AppController {
 			JSONObject urls = body.getJSONObject("backUrls");
 			Integer direccionId = body.getInt("direccion_id");
 			int pedidoId = body.getInt("pedido_id");
+			String fechaEnvio = body.getString("fecha_envio");
 			// Agrega credenciales
 			MercadoPagoConfig
 					.setAccessToken("APP_USR-411942404565714-112820-46da2a5cc4a2a44f087cb876ffa9eb84-2125634042");
@@ -92,6 +96,11 @@ public class PagosController extends AppController {
 						.status(404);
 				return;
 			}
+			// obtengo el envio y guardo la fecha de envio
+			Envio e = Envio.findFirst("pedido_id = ?", pedidoId);
+			LocalDate fechaEnvioDate = LocalDate.parse(fechaEnvio);
+			e.set("fechaEnvio", Date.valueOf(fechaEnvioDate));
+			e.saveIt();
 
 			double envio = d.calcularCostoEnvio();
 			BigDecimal costoEnvio = envio > 0 ? BigDecimal.valueOf(envio) : BigDecimal.ZERO;
@@ -170,7 +179,7 @@ public class PagosController extends AppController {
 					.backUrls(backUrls)
 					.externalReference(Integer.toString(userIdFromToken)) // Número de pedido interno
 					.notificationUrl(
-							"https://32ef-2800-a4-29f8-a300-c5a7-5312-e5b7-6c8c.ngrok-free.app/hooks/handleWebhook")
+							"https://eddb-2800-a4-29dc-bb00-7d24-90af-803a-e96c.ngrok-free.app/hooks/handleWebhook")
 					.autoReturn("approved") // Retorno automático al éxito
 					.build();
 

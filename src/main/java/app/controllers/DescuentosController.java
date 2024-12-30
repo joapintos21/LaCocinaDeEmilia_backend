@@ -1,15 +1,17 @@
 package app.controllers;
 
-import app.models.Descuento;
-import app.models.TipoDescuento;
+import java.sql.Date;
+import java.util.List;
+
 import org.javalite.activeweb.AppController;
+import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.POST;
 import org.javalite.activeweb.annotations.PUT;
-import org.javalite.activeweb.annotations.DELETE;
 import org.json.JSONArray;
-import java.sql.Date;
-import java.util.List;
+
+import app.models.Descuento;
+import app.models.TipoDescuento;
 
 public class DescuentosController extends AppController {
 
@@ -60,6 +62,15 @@ public class DescuentosController extends AppController {
         List<Descuento> descuentos = Descuento.findAll();
         JSONArray jsonArray = new JSONArray();
         descuentos.forEach(descuento -> jsonArray.put(descuento.toJson()));
+        respond(jsonArray.toString()).contentType("application/json");
+    }
+
+    // Obtener tipos de descuentos
+    @GET
+    public void tiposDescuntos() {
+        List<TipoDescuento> tipoDescuentos = TipoDescuento.findAll();
+        JSONArray jsonArray = new JSONArray();
+        tipoDescuentos.forEach(tipoDescuento -> jsonArray.put(tipoDescuento.toJson()));
         respond(jsonArray.toString()).contentType("application/json");
     }
 
