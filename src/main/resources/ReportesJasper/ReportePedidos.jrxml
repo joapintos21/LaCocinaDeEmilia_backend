@@ -121,71 +121,71 @@ from aplicacion.vista_pedidos_detalles]]></query>
 	</title>
 	<pageHeader splitType="Stretch"/>
 	<columnHeader height="27" splitType="Stretch">
-		<element kind="staticText" uuid="f9ad0b1c-2502-49f4-aa80-6d9b7b739ec7" x="0" y="0" width="38" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="f9ad0b1c-2502-49f4-aa80-6d9b7b739ec7" stretchType="ContainerBottom" x="0" y="0" width="38" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Id]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="5e9f6457-a7d7-4d91-84f8-cb9b110d91c6"/>
 		</element>
-		<element kind="staticText" uuid="e530d17e-035f-41d3-b027-bdb15d1bcab4" x="38" y="0" width="126" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="e530d17e-035f-41d3-b027-bdb15d1bcab4" stretchType="ContainerBottom" x="38" y="0" width="126" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Nombre del cliente]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="baab4014-c7dc-48f2-a94d-bb7e11210cc5"/>
 		</element>
-		<element kind="staticText" uuid="c3afcc33-bd0f-465b-9d61-3307bf93b27e" x="164" y="0" width="116" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="c3afcc33-bd0f-465b-9d61-3307bf93b27e" stretchType="ContainerBottom" x="164" y="0" width="116" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Fecha de creación]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="dfe9222d-996b-4f14-a317-bfb39f0a06f2"/>
 		</element>
-		<element kind="staticText" uuid="1da2f431-099b-4e99-a2fa-b6f73577db11" x="280" y="0" width="72" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="1da2f431-099b-4e99-a2fa-b6f73577db11" stretchType="ContainerBottom" x="280" y="0" width="72" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Total]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="d8018377-50e1-4559-8e17-c4bd1c2d9cfa"/>
 		</element>
-		<element kind="staticText" uuid="6d6c37a4-ea60-4219-9c0e-d7b831f028cb" x="352" y="0" width="176" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="6d6c37a4-ea60-4219-9c0e-d7b831f028cb" stretchType="ContainerBottom" x="352" y="0" width="176" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Estado del pedido]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="d8c2df3d-fc08-4b51-9824-0cdf6dd6ef5a"/>
 		</element>
-		<element kind="staticText" uuid="ee6bb855-d220-46eb-b6e2-1689e87ec339" x="528" y="0" width="132" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="ee6bb855-d220-46eb-b6e2-1689e87ec339" stretchType="ContainerBottom" x="528" y="0" width="132" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Método de pago]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="e5cbb683-9b76-4d82-9570-9151017dcbcd"/>
 		</element>
-		<element kind="staticText" uuid="c7653480-8c44-4d13-aa90-365f877df9a6" x="960" y="0" width="100" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="c7653480-8c44-4d13-aa90-365f877df9a6" stretchType="ContainerBottom" x="960" y="0" width="100" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Fecha de entrega]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="b94d3666-4f59-4176-a387-cb752eafdf86"/>
 		</element>
-		<element kind="staticText" uuid="082b168a-4404-461b-82d3-910e73551bd9" x="660" y="0" width="160" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="082b168a-4404-461b-82d3-910e73551bd9" stretchType="ContainerBottom" x="660" y="0" width="160" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Nombre de cocinera]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="dfe9222d-996b-4f14-a317-bfb39f0a06f2"/>
 		</element>
-		<element kind="staticText" uuid="3f2f9806-38b6-4c7a-9e74-b2447935eb80" x="820" y="0" width="140" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="3f2f9806-38b6-4c7a-9e74-b2447935eb80" stretchType="ContainerBottom" x="820" y="0" width="140" height="18" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Nombre de cadete]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="dfe9222d-996b-4f14-a317-bfb39f0a06f2"/>
 		</element>
-		<element kind="staticText" uuid="3849d4e6-a179-4b2f-a61f-36af0f888d54" x="1060" y="0" width="100" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="3849d4e6-a179-4b2f-a61f-36af0f888d54" stretchType="ContainerBottom" x="1060" y="0" width="100" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Teléfono]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f937257e-5f4c-4fe9-bde5-4b1bf43eaf05"/>
 			<box style="Column header">
 				<pen lineColor="#666666"/>
 			</box>
 		</element>
-		<element kind="staticText" uuid="f49ddef7-9111-428c-94ef-617541654395" x="1160" y="0" width="200" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="f49ddef7-9111-428c-94ef-617541654395" stretchType="ContainerBottom" x="1160" y="0" width="200" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Dirección]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f937257e-5f4c-4fe9-bde5-4b1bf43eaf05"/>
 			<box style="Column header">
 				<pen lineColor="#666666"/>
 			</box>
 		</element>
-		<element kind="staticText" uuid="5c849fd9-2fb1-44b8-a51d-762462730523" x="1360" y="0" width="120" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="5c849fd9-2fb1-44b8-a51d-762462730523" stretchType="ContainerBottom" x="1360" y="0" width="90" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Barrio]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f937257e-5f4c-4fe9-bde5-4b1bf43eaf05"/>
 			<box style="Column header">
 				<pen lineColor="#666666"/>
 			</box>
 		</element>
-		<element kind="staticText" uuid="5795587b-f408-4843-8835-c275b8891a34" x="1480" y="0" width="170" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="5795587b-f408-4843-8835-c275b8891a34" stretchType="ContainerBottom" x="1450" y="0" width="170" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Estado del pedido]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f937257e-5f4c-4fe9-bde5-4b1bf43eaf05"/>
 			<box style="Column header">
 				<pen lineColor="#666666"/>
 			</box>
 		</element>
-		<element kind="staticText" uuid="2a793dcc-c215-4b1b-acab-422b71531f3b" stretchType="ContainerHeight" x="1650" y="0" width="110" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
+		<element kind="staticText" uuid="2a793dcc-c215-4b1b-acab-422b71531f3b" stretchType="ContainerBottom" x="1620" y="0" width="140" height="17" forecolor="#000000" bold="false" hTextAlign="Left" style="Column header">
 			<text><![CDATA[Detalles del pedido]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f937257e-5f4c-4fe9-bde5-4b1bf43eaf05"/>
 			<box style="Column header">
@@ -196,12 +196,12 @@ from aplicacion.vista_pedidos_detalles]]></query>
 	<detail>
 		<band height="39" splitType="Stretch">
 			<element kind="frame" uuid="b50221b5-8254-440b-8c6f-1f0b138c9259" mode="Opaque" x="0" y="0" width="1760" height="18" style="Row">
-				<element kind="textField" uuid="0cdb6efb-7e62-42a3-b256-3456e54e187e" positionType="Float" x="0" y="0" width="40" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
+				<element kind="textField" uuid="0cdb6efb-7e62-42a3-b256-3456e54e187e" positionType="Float" x="0" y="0" width="40" height="18" fontName="SansSerif" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
 					<expression><![CDATA[$F{id}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="5e9f6457-a7d7-4d91-84f8-cb9b110d91c6"/>
 				</element>
-				<element kind="textField" uuid="a92e3ed7-104f-4bf9-b060-0369338288a3" positionType="Float" x="40" y="0" width="124" height="18" markup="none" fontSize="14.0" textAdjust="StretchHeight" hTextAlign="Left" style="Row">
-					<paragraph lineSpacingSize="0.0" leftIndent="2" rightIndent="2"/>
+				<element kind="textField" uuid="a92e3ed7-104f-4bf9-b060-0369338288a3" positionType="Float" x="40" y="0" width="124" height="18" markup="none" fontName="SansSerif" fontSize="14.0" textAdjust="StretchHeight" linkType="None" linkTarget="Self" style="Row">
+					<paragraph lineSpacingSize="1.0" leftIndent="0" rightIndent="0"/>
 					<expression><![CDATA[$F{nombre_cliente}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="baab4014-c7dc-48f2-a94d-bb7e11210cc5"/>
 					<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
@@ -243,15 +243,15 @@ from aplicacion.vista_pedidos_detalles]]></query>
 					<expression><![CDATA[$F{direccion}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f937257e-5f4c-4fe9-bde5-4b1bf43eaf05"/>
 				</element>
-				<element kind="textField" uuid="c7fdadff-73ca-4ab1-8fc3-21a336354805" x="1360" y="0" width="120" height="18" fontSize="14.0" textAdjust="StretchHeight" bold="false" style="Detail">
+				<element kind="textField" uuid="c7fdadff-73ca-4ab1-8fc3-21a336354805" x="1360" y="0" width="90" height="18" fontSize="14.0" textAdjust="StretchHeight" bold="false" style="Detail">
 					<expression><![CDATA[$F{barrio}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f937257e-5f4c-4fe9-bde5-4b1bf43eaf05"/>
 				</element>
-				<element kind="textField" uuid="f7c70958-bc1c-42c1-bdec-6e8ebcaf3815" x="1480" y="0" width="170" height="18" fontSize="14.0" textAdjust="StretchHeight" bold="false" style="Detail">
+				<element kind="textField" uuid="f7c70958-bc1c-42c1-bdec-6e8ebcaf3815" x="1450" y="0" width="170" height="18" fontSize="14.0" textAdjust="StretchHeight" bold="false" style="Detail">
 					<expression><![CDATA[$F{estado_pedido}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f937257e-5f4c-4fe9-bde5-4b1bf43eaf05"/>
 				</element>
-				<element kind="textField" uuid="6bc49d6e-8f27-41c7-98fa-fc4b2dc00a9f" x="1650" y="0" width="110" height="18" fontSize="14.0" textAdjust="StretchHeight" bold="false" style="Detail">
+				<element kind="textField" uuid="6bc49d6e-8f27-41c7-98fa-fc4b2dc00a9f" x="1620" y="0" width="140" height="18" fontSize="14.0" textAdjust="StretchHeight" bold="false" style="Detail">
 					<expression><![CDATA[$F{detalles_pedido}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f937257e-5f4c-4fe9-bde5-4b1bf43eaf05"/>
 				</element>

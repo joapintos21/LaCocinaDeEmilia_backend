@@ -10,7 +10,6 @@ import java.util.Properties;
 
 public class ReportePDF {
     public void generarReportePDF() throws Exception {
-        // Carga el archivo .jasper
         JasperPrint jasperPrint = JasperFillManager.fillReport(
                 "src/main/resources/ReportesJasper/ReportePedidos.jasper", new HashMap<>(), obtenerConexion());
 
@@ -19,6 +18,16 @@ public class ReportePDF {
                 jasperPrint, "reporte.pdf");
         System.out.println("Reporte generado: reporte.pdf");
     }
+
+public void generarReportePDFUsuarios() throws Exception {
+    JasperPrint jasperPrint = JasperFillManager.fillReport(
+            "src/main/resources/ReportesJasper/ReporteUsuarios.jasper", new HashMap<>(), obtenerConexion());
+
+    // Exporta el reporte a PDF
+    JasperExportManager.exportReportToPdfFile(
+            jasperPrint, "reporte_usuarios.pdf");
+    System.out.println("Reporte generado: reporte_usuarios.pdf");
+}
 
     private Connection obtenerConexion() throws Exception {
         Properties props = new Properties();

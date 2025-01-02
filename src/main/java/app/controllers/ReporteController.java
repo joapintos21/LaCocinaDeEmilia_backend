@@ -37,4 +37,31 @@ public class ReporteController extends AppController {
                     .status(500);
         }
     }
+
+    @GET
+    public void generarReporteUsuarios() {
+        System.out.println("Solicitud recibida para generar reporte de usuarios");
+        try {
+            // Genera el reporte y obtiene la ruta del archivo
+            ReportePDF reportePDF = new ReportePDF();
+            reportePDF.generarReportePDFUsuarios(); // Método que genera el reporte de usuarios
+
+            // Lee el archivo PDF como bytes
+            byte[] pdfBytes = Files.readAllBytes(Paths.get("reporte_usuarios.pdf"));
+
+            // Convierte los bytes a Base64
+            String base64EncodedPdf = Base64.getEncoder().encodeToString(pdfBytes);
+
+            // Envía la respuesta con el PDF codificado
+            respond("{\"file\": \"" + base64EncodedPdf + "\"}")
+                    .contentType("application/json")
+                    .status(200);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Manejo de errores
+            respond("{\"error\": \"Error al generar el reporte: " + e.getMessage() + "\"}")
+                    .contentType("application/json")
+                    .status(500);
+        }
+    }
 }
