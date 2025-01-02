@@ -13,7 +13,7 @@ public class JWTFilter extends HttpSupportFilter {
             "/usuarios/create",
             "/usuarios/validarToken",
             "/login/iniciarSesion",
-            "instagram/obtenerMedia");
+            "/instagram/obtenerMedia");
 
     private static final Set<String> EXCLUDED_CONTROLLER_PATHS = Set.of(
             "/productos",
