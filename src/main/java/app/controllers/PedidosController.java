@@ -52,7 +52,6 @@ public class PedidosController extends AppController {
         }
     }
 
-    // Actualizar el estado de un pedido y registrar en el historial
     @PUT
     public void updateStatus() {
         int id = Integer.parseInt(param("id"));
@@ -75,7 +74,6 @@ public class PedidosController extends AppController {
         }
     }
 
-    // Obtener todos los pedidos
     @GET
     public void index() {
         List<Pedido> pedidos = Pedido.findAll();
@@ -293,7 +291,7 @@ public class PedidosController extends AppController {
         int pedidoId = body.getInt("pedido_id");
         int metodoPagoId = body.getInt("metodo_pago_id");
         String paymentId = body.getString("payment_id");
-        String fechaEnvio = body.getString("fecha_envio");
+        String fechaEnvio = body.optString("fecha_envio", null);
         BigDecimal comision = BigDecimal.ZERO;
         EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
 
@@ -304,6 +302,10 @@ public class PedidosController extends AppController {
                 respond("{\"error\": \"Pedido no encontrado\"}").contentType("application/json").status(404);
                 return;
             }
+
+            if (fechaEnvio != null && !fechaEnvio.isEmpty()) {
+            pedido.set("fecha_entrega", Date.valueOf(fechaEnvio));
+        }
 
             Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
             LocalDate fechaEnvioDate = LocalDate.parse(fechaEnvio);
@@ -461,24 +463,15 @@ public class PedidosController extends AppController {
     @GET
     public void obtenerPedidosParaCocinera() {
         try {
-            // Obtener la fecha de hoy
             Date fechaHoy = Date.valueOf(java.time.LocalDate.now());
 
-            // Buscar pedidos con envíos que tienen fechaEnvio igual a hoy
-            List<Pedido> pedidosHoy = Pedido.where(
-                    "id IN (SELECT pedido_id FROM aplicacion.Envio WHERE fechaEnvio <= ?) AND estado = ?", fechaHoy, 2);
-            // Buscar pedidos con envíos que tienen fechaEnvio posterior a hoy
-            List<Pedido> pedidosPosteriores = Pedido.where(
-                    "id IN (SELECT pedido_id FROM aplicacion.Envio WHERE fechaEnvio > ?) AND estado = ?", fechaHoy, 2);
+            List<Pedido> pedidosHoy = Pedido.where("fecha_entrega <= ? AND estado = ?", fechaHoy, 2);
+            List<Pedido> pedidosPosteriores = Pedido.where("fecha_entrega > ? AND estado = ?", fechaHoy, 2);
 
-            // Construir la respuesta JSON
             JSONObject response = new JSONObject();
-
-            // Agregar pedidos de hoy al JSON
             response.put("pedidosHoy", pedidosHoy.stream().map(pedido -> {
                 JSONObject pedidoJson = pedido.toJson();
 
-                // Incluir detalles del pedido
                 List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
                 JSONArray detallesJson = new JSONArray();
                 for (PedidoDetalle detalle : detalles) {
@@ -496,11 +489,9 @@ public class PedidosController extends AppController {
                 return pedidoJson;
             }).collect(Collectors.toList()));
 
-            // Agregar pedidos posteriores al JSON
             response.put("pedidosPosteriores", pedidosPosteriores.stream().map(pedido -> {
                 JSONObject pedidoJson = pedido.toJson();
 
-                // Incluir detalles del pedido
                 List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
                 JSONArray detallesJson = new JSONArray();
                 for (PedidoDetalle detalle : detalles) {
@@ -515,13 +506,9 @@ public class PedidosController extends AppController {
                 if (!pedidoJson.has("cocinera_asignada")) {
                     pedidoJson.put("cocinera_asignada", JSONObject.NULL);
                 }
-                // Buscar la fechaEnvio desde la tabla Envio
-                Envio envio = Envio.findFirst("pedido_id = ?", pedido.getId());
-                pedidoJson.put("fecha_entrega", envio.get("fechaEnvio"));
                 return pedidoJson;
             }).collect(Collectors.toList()));
 
-            // Enviar la respuesta
             respond(response.toString()).contentType("application/json").status(200);
         } catch (Exception e) {
             respond("{\"error\": \"Error al obtener pedidos: " + e.getMessage() + "\"}")
@@ -535,7 +522,6 @@ public class PedidosController extends AppController {
             JSONObject body = new JSONObject(getRequestString());
             int pedidoId = body.getInt("pedido_id");
             int userId = body.getInt("userId");
-
             Usuario user = Usuario.findFirst("id = ?", userId);
 
             if (user.get("rol_id") == "0") {
@@ -546,8 +532,18 @@ public class PedidosController extends AppController {
 
             Pedido pedido = Pedido.findById(pedidoId);
             if (pedido != null) {
+                Integer estadoAnterior = pedido.getInteger("estado");
                 pedido.set("cocinera_asignada", userId);
                 pedido.saveIt();
+
+                try {
+                    System.out.println("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
+                    registrarCambioEnHistorial(pedidoId, estadoAnterior, estadoAnterior, userId, "Pedido reasignado a nueva cocinera", new java.sql.Timestamp(System.currentTimeMillis()));
+                } catch (Exception e) {
+                    System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
+                    e.printStackTrace();
+                }
+
                 respond("{\"message\": \"Pedido reasignado exitosamente.\"}")
                         .contentType("application/json").status(200);
             } else {
@@ -565,11 +561,20 @@ public class PedidosController extends AppController {
         try {
             JSONObject body = new JSONObject(getRequestString());
             int pedidoId = body.getInt("pedido_id");
-
             Pedido pedido = Pedido.findById(pedidoId);
             if (pedido != null) {
+                Integer estadoAnterior = pedido.getInteger("estado");
                 pedido.set("estado", 3);
                 pedido.saveIt();
+                
+                try {
+                    System.out.println("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
+                    registrarCambioEnHistorial(pedidoId, estadoAnterior, 3, pedido.getInteger("cocinera_asignada"), "Pedido marcado como terminado", new java.sql.Timestamp(System.currentTimeMillis()));
+                } catch (Exception e) {
+                    System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
+                    e.printStackTrace();
+                }
+
                 respond("{\"message\": \"Pedido marcado como terminado.\"}")
                         .contentType("application/json").status(200);
             } else {
@@ -585,20 +590,12 @@ public class PedidosController extends AppController {
     @GET
     public void obtenerPedidosParaCadete() {
         try {
-            // Obtener la fecha de hoy
             Date fechaHoy = Date.valueOf(java.time.LocalDate.now());
+            List<Pedido> pedidosHoy = Pedido.where("fecha_entrega <= ? AND estado = ?", fechaHoy, 3);
+            List<Pedido> pedidosPosteriores = Pedido.where("fecha_entrega > ? AND estado = ?", fechaHoy, 3);
 
-            // Buscar pedidos con envíos que tienen fechaEnvio igual a hoy
-            List<Pedido> pedidosHoy = Pedido.where(
-                    "id IN (SELECT pedido_id FROM aplicacion.Envio WHERE fechaEnvio <= ?) AND estado = ?", fechaHoy, 3);
-            // Buscar pedidos con envíos que tienen fechaEnvio posterior a hoy
-            List<Pedido> pedidosPosteriores = Pedido.where(
-                    "id IN (SELECT pedido_id FROM aplicacion.Envio WHERE fechaEnvio > ?) AND estado = ?", fechaHoy, 3);
-
-            // Construir la respuesta JSON
             JSONObject response = new JSONObject();
 
-            // Agregar pedidos de hoy al JSON
             response.put("pedidosHoy", pedidosHoy.stream().map(pedido -> {
                 JSONObject pedidoJson = pedido.toJson();
 
@@ -607,26 +604,27 @@ public class PedidosController extends AppController {
                 if (direccion != null) {
                     pedidoJson.put("direccion", direccion.get("direccion"));
                 }
+
                 if (!pedidoJson.has("cadete_asignado")) {
                     pedidoJson.put("cadete_asignado", JSONObject.NULL);
                 }
+
                 return pedidoJson;
             }).collect(Collectors.toList()));
 
-            // Agregar pedidos posteriores al JSON
             response.put("pedidosPosteriores", pedidosPosteriores.stream().map(pedido -> {
                 JSONObject pedidoJson = pedido.toJson();
+
                 Direccion direccion = Direccion.findFirst(
                         "id IN (SELECT direccion_id FROM aplicacion.Envio WHERE pedido_id = ?)", pedido.getId());
                 if (direccion != null) {
                     pedidoJson.put("direccion", direccion.get("direccion"));
                 }
+
                 if (!pedidoJson.has("cadete_asignado")) {
                     pedidoJson.put("cadete_asignado", JSONObject.NULL);
                 }
-                // Buscar la fechaEnvio desde la tabla Envio
-                Envio envio = Envio.findFirst("pedido_id = ?", pedido.getId());
-                pedidoJson.put("fecha_entrega", envio.get("fechaEnvio"));
+
                 return pedidoJson;
             }).collect(Collectors.toList()));
 
@@ -655,8 +653,18 @@ public class PedidosController extends AppController {
 
             Pedido pedido = Pedido.findById(pedidoId);
             if (pedido != null) {
+                Integer estadoAnterior = pedido.getInteger("estado");
                 pedido.set("cadete_asignado", userId);
                 pedido.saveIt();
+
+                try {
+                    System.out.println("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
+                    registrarCambioEnHistorial(pedidoId, estadoAnterior, estadoAnterior, userId, "Pedido reasignado a nuevo cadete", new java.sql.Timestamp(System.currentTimeMillis()));
+                } catch (Exception e) {
+                    System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
+                    e.printStackTrace();
+                }
+
                 respond("{\"message\": \"Pedido reasignado exitosamente.\"}")
                         .contentType("application/json").status(200);
             } else {
@@ -677,8 +685,19 @@ public class PedidosController extends AppController {
 
             Pedido pedido = Pedido.findById(pedidoId);
             if (pedido != null) {
+                Integer estadoAnterior = pedido.getInteger("estado");
                 pedido.set("estado", 4);
                 pedido.saveIt();
+
+                try {
+                    System.out.println("Llamando a registrarCambioEnHistorial para el pedido entregado: " + pedidoId);
+                    registrarCambioEnHistorial(pedidoId, estadoAnterior, 4, pedido.getInteger("cadete_asignado"), "Pedido marcado como entregado", 
+                                                new java.sql.Timestamp(System.currentTimeMillis()));
+                } catch (Exception e) {
+                    System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
+                    e.printStackTrace();
+                }
+
                 respond("{\"message\": \"Pedido marcado como entregado.\"}")
                         .contentType("application/json").status(200);
             } else {
@@ -699,4 +718,26 @@ public class PedidosController extends AppController {
         pago.set("estado_pago", estadoPago);
         pago.saveIt();
     }
+
+    private void registrarCambioEnHistorial(int pedidoId, Integer estadoAnterior, Integer estadoNuevo, int usuarioId, String observaciones, java.sql.Timestamp fechaCambio) {
+        try {
+            PedidoHistorico historial = new PedidoHistorico();
+            historial.set("pedido_id", pedidoId);
+            historial.set("estado_anterior", estadoAnterior);
+            historial.set("estado_nuevo", estadoNuevo);
+            historial.set("usuario_id", usuarioId);
+            historial.set("fecha_cambio", fechaCambio);
+            historial.set("observaciones", observaciones);
+
+            if (historial.saveIt()) {
+                System.out.println("Registro en PedidoHistorico exitoso.");
+            } else {
+                System.out.println("Error al guardar en PedidoHistorico: " + historial.errors().toString());
+            }
+        } catch (Exception e) {
+            System.err.println("Excepción al registrar en PedidoHistorico: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
 }
