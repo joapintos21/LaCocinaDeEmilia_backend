@@ -308,9 +308,9 @@ public class PedidosController extends AppController {
         }
 
             Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
-            LocalDate fechaEnvioDate = LocalDate.parse(fechaEnvio);
-            envio.set("fechaEnvio", Date.valueOf(fechaEnvioDate));
-            envio.saveIt();
+            //LocalDate fechaEnvioDate = LocalDate.parse(fechaEnvio);
+            //envio.set("fechaEnvio", Date.valueOf(fechaEnvioDate));
+            //envio.saveIt();
 
             // Verificar el método de pago
             if (metodoPagoId == 1) {
@@ -591,24 +591,24 @@ public class PedidosController extends AppController {
     public void obtenerPedidosParaCadete() {
         try {
             Date fechaHoy = Date.valueOf(java.time.LocalDate.now());
+
             List<Pedido> pedidosHoy = Pedido.where("fecha_entrega <= ? AND estado = ?", fechaHoy, 3);
             List<Pedido> pedidosPosteriores = Pedido.where("fecha_entrega > ? AND estado = ?", fechaHoy, 3);
 
             JSONObject response = new JSONObject();
-
             response.put("pedidosHoy", pedidosHoy.stream().map(pedido -> {
                 JSONObject pedidoJson = pedido.toJson();
 
                 Direccion direccion = Direccion.findFirst(
-                        "id IN (SELECT direccion_id FROM aplicacion.Envio WHERE pedido_id = ?)", pedido.getId());
-                if (direccion != null) {
-                    pedidoJson.put("direccion", direccion.get("direccion"));
-                }
+                    "id IN (SELECT direccion_id FROM aplicacion.Envio WHERE pedido_id = ?)", pedido.getId());
+            if (direccion != null) {
+                pedidoJson.put("direccion", direccion.get("direccion"));
+            }
+
 
                 if (!pedidoJson.has("cadete_asignado")) {
                     pedidoJson.put("cadete_asignado", JSONObject.NULL);
                 }
-
                 return pedidoJson;
             }).collect(Collectors.toList()));
 
@@ -624,11 +624,9 @@ public class PedidosController extends AppController {
                 if (!pedidoJson.has("cadete_asignado")) {
                     pedidoJson.put("cadete_asignado", JSONObject.NULL);
                 }
-
                 return pedidoJson;
             }).collect(Collectors.toList()));
 
-            // Enviar la respuesta
             respond(response.toString()).contentType("application/json").status(200);
         } catch (Exception e) {
             respond("{\"error\": \"Error al obtener pedidos: " + e.getMessage() + "\"}")
@@ -677,38 +675,60 @@ public class PedidosController extends AppController {
         }
     }
 
-    @PUT
-    public void marcarComoEntregado() {
-        try {
-            JSONObject body = new JSONObject(getRequestString());
-            int pedidoId = body.getInt("pedido_id");
-
-            Pedido pedido = Pedido.findById(pedidoId);
-            if (pedido != null) {
-                Integer estadoAnterior = pedido.getInteger("estado");
-                pedido.set("estado", 4);
-                pedido.saveIt();
-
-                try {
-                    System.out.println("Llamando a registrarCambioEnHistorial para el pedido entregado: " + pedidoId);
-                    registrarCambioEnHistorial(pedidoId, estadoAnterior, 4, pedido.getInteger("cadete_asignado"), "Pedido marcado como entregado", 
-                                                new java.sql.Timestamp(System.currentTimeMillis()));
-                } catch (Exception e) {
-                    System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
-                    e.printStackTrace();
-                }
-
-                respond("{\"message\": \"Pedido marcado como entregado.\"}")
-                        .contentType("application/json").status(200);
-            } else {
-                respond("{\"error\": \"Pedido no encontrado.\"}")
-                        .contentType("application/json").status(404);
-            }
-        } catch (Exception e) {
-            respond("{\"error\": \"Error al marcar pedido como entregado: " + e.getMessage() + "\"}")
-                    .contentType("application/json").status(500);
-        }
-    }
+ @PUT
+ public void marcarComoEntregado() {
+     try {
+         JSONObject body = new JSONObject(getRequestString());
+ 
+         if (!body.has("pedido_id")) {
+             respond("{\"error\": \"El parámetro pedido_id es requerido.\"}")
+                 .contentType("application/json").status(400);
+             return;
+         }
+ 
+         int pedidoId = body.getInt("pedido_id");
+         Pedido pedido = Pedido.findById(pedidoId);
+         if (pedido == null) {
+             respond("{\"error\": \"Pedido no encontrado.\"}")
+                 .contentType("application/json").status(404);
+             return;
+         }
+ 
+         Integer estadoAnterior = pedido.getInteger("estado");
+         pedido.set("estado", 4);
+         pedido.saveIt();
+ 
+         Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
+         if (envio != null) {
+             envio.set("entregado", true);
+             envio.set("fechaenvio", new java.sql.Timestamp(System.currentTimeMillis()));
+             envio.saveIt();
+         } else {
+             System.err.println("No se encontró un registro de envío para el pedido ID: " + pedidoId);
+         }
+ 
+         try {
+             if (pedido.getInteger("cadete_asignado") != null) {
+                 registrarCambioEnHistorial(pedidoId, estadoAnterior, 4, pedido.getInteger("cadete_asignado"),
+                     "Pedido marcado como entregado", new java.sql.Timestamp(System.currentTimeMillis()));
+             } else {
+                 System.err.println("El pedido no tiene un cadete asignado.");
+             }
+         } catch (Exception e) {
+             System.err.println("Error al registrar el cambio en el historial: " + e.getMessage());
+             e.printStackTrace();
+         }
+ 
+         respond("{\"message\": \"Pedido y envío marcados como entregados.\"}")
+             .contentType("application/json").status(200);
+ 
+     } catch (Exception e) {
+         System.err.println("Error al marcar pedido como entregado: " + e.getMessage());
+         e.printStackTrace();
+         respond("{\"error\": \"Error al marcar pedido como entregado: " + e.getMessage() + "\"}")
+             .contentType("application/json").status(500);
+     }
+ }
 
     private void crearPago(Pedido pedido, Integer metodoPagoId, String estadoPago, BigDecimal monto) {
         Pago pago = new Pago();
