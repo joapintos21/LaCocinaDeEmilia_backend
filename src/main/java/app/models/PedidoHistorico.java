@@ -24,9 +24,7 @@ public class PedidoHistorico extends Model {
         return jsonObject;
     }
 
-    // Método para registrar un cambio de estado
-    public static PedidoHistorico registrarCambio(Pedido pedido, String estadoAnterior, String estadoNuevo,
-            Usuario usuario, String observaciones) {
+    public static PedidoHistorico registrarCambio(Pedido pedido, String estadoAnterior, String estadoNuevo,Usuario usuario, String observaciones) {
         PedidoHistorico historico = new PedidoHistorico();
         historico.set("pedido_id", pedido.getId());
         historico.set("estado_anterior", estadoAnterior);
@@ -34,7 +32,13 @@ public class PedidoHistorico extends Model {
         historico.set("usuario_id", usuario.getId());
         historico.set("fecha_cambio", new java.sql.Timestamp(System.currentTimeMillis()));
         historico.set("observaciones", observaciones);
-        historico.saveIt();
+
+        if (historico.saveIt()) {
+            System.out.println("Registro exitoso en PedidoHistorico.");
+        } else {
+            System.out.println("Errores al guardar en PedidoHistorico: " + historico.errors().toString());
+        }
+
         return historico;
     }
 }
