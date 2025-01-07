@@ -1,6 +1,9 @@
 ALTER TABLE aplicacion.Pedido
 ADD COLUMN fecha_entrega DATE;
 
+ALTER TABLE aplicacion.Direccion
+ADD COLUMN barrio TEXT;
+
 CREATE OR REPLACE VIEW aplicacion.vista_pedidos_detalles
  AS
  SELECT p.id,
