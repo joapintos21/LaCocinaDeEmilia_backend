@@ -133,7 +133,7 @@ CREATE TABLE aplicacion.Producto (
     descripcion TEXT NOT NULL,
     imagen TEXT,
     precio NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
-    categoria_id INT REFERENCES aplicacion.Categoria(id) ON DELETE SET NULL,
+    categoria_id INT REFERENCES aplicacion.Categoria(id),
     visible BOOLEAN DEFAULT TRUE
 );
 
