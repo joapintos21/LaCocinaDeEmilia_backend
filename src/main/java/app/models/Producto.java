@@ -16,6 +16,11 @@ import org.json.JSONObject;
 @HasMany(child = DescuentoProducto.class, foreignKeyName = "producto_id")
 public class Producto extends Model {
 
+    @Override
+    public Long getId() {
+        return getLong("id");
+    }
+
     static {
         validatePresenceOf("descripcion", "precio", "categoria_id");
         validateNumericalityOf("precio").greaterThan(0);
@@ -67,10 +72,20 @@ public class Producto extends Model {
         JSONArray descuentosArray = new JSONArray();
         for (DescuentoProducto descuento : descuentos) {
             JSONObject descuentoJson = descuento.toJson(); // Asegúrate de que DescuentoProducto tiene un método
-                                                           // toJson()
+            // toJson()
             descuentosArray.put(descuentoJson);
         }
         jsonObject.put("descuentos", descuentosArray);
+
+        return jsonObject;
+    }
+
+    public JSONObject toDescuentoJson() {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("id", get("id"));
+        jsonObject.put("descripcion", get("descripcion"));
+        jsonObject.put("precio", get("precio"));
+        jsonObject.put("visible", get("visible"));
 
         return jsonObject;
     }

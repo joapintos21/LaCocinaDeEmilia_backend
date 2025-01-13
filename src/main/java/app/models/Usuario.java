@@ -1,14 +1,16 @@
 package app.models;
 
+import java.util.Base64;
+import java.util.Date;
+
 import org.javalite.activejdbc.Base;
 import org.javalite.activejdbc.Model;
 import org.javalite.activejdbc.annotations.Table;
 import org.json.JSONObject;
 import org.mindrot.jbcrypt.BCrypt;
+
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import java.util.Base64;
-import java.util.Date;
 
 @Table("gestion_usuarios.Usuario")
 public class Usuario extends Model {
@@ -166,7 +168,9 @@ public class Usuario extends Model {
         jsonObject.put("nombre", get("nombre"));
         jsonObject.put("email", get("email"));
         jsonObject.put("telefono", get("telefono"));
+        jsonObject.put("rol_id", get("rol_id"));
         jsonObject.put("rol", Rol.findById(get("rol_id")).get("nombre")); // Añadir el nombre del rol
+        jsonObject.put("status", getStatus());
         return jsonObject;
     }
 }

@@ -1,7 +1,10 @@
 package app.controllers;
 
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
@@ -9,8 +12,11 @@ import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.POST;
 import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import app.models.Descuento;
+import app.models.DescuentoProducto;
+import app.models.Producto;
 import app.models.TipoDescuento;
 
 public class DescuentosController extends AppController {
@@ -60,8 +66,47 @@ public class DescuentosController extends AppController {
     @GET
     public void index() {
         List<Descuento> descuentos = Descuento.findAll();
+        List<DescuentoProducto> descuentosProductos = DescuentoProducto.findAll();
+        List<Producto> productos = Producto.findAll();
+
+        // Crear un mapeo de descuento_id a sus productos asociados
+        Map<Long, List<Producto>> descuentoProductoMap = new HashMap<>();
+        for (DescuentoProducto dp : descuentosProductos) {
+            Long descuentoId = dp.getDescuentoId(); // Asegúrate de que este método devuelve el ID correcto
+            Long productoId = dp.getProductoId();   // Asegúrate de que este método devuelve el ID correcto
+            Producto producto = productos.stream()
+                    .filter(p -> p.getId().equals(productoId))
+                    .findFirst()
+                    .orElse(null);
+            if (producto != null) { // Solo agregar si el producto existe
+                descuentoProductoMap
+                        .computeIfAbsent(descuentoId, k -> new ArrayList<>())
+                        .add(producto);
+            }
+        }
+
+        System.out.println("Mapeo de descuentos:" + descuentoProductoMap);
+
+        // Crear el JSON que asocia descuentos con sus productos
         JSONArray jsonArray = new JSONArray();
-        descuentos.forEach(descuento -> jsonArray.put(descuento.toJson()));
+        for (Descuento descuento : descuentos) {
+            JSONObject jsonDescuento = descuento.toJson();
+            List<Producto> productosAsociados = descuentoProductoMap.getOrDefault(descuento.getId(), new ArrayList<>());
+            JSONArray jsonProductos = new JSONArray();
+            for (Producto producto : productosAsociados) {
+                if (producto != null) {
+                    jsonProductos.put(producto.toDescuentoJson());
+                }
+            }
+            jsonDescuento.put("productos", jsonProductos);
+
+            System.out.println("Productos asociados para descuento ID " + descuento.getId() + ": " + productosAsociados);
+
+            jsonArray.put(jsonDescuento);
+        }
+
+        System.out.println("JSON final:" + jsonArray);
+
         respond(jsonArray.toString()).contentType("application/json");
     }
 
