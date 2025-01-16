@@ -1,0 +1,1 @@
+ALTER TABLE aplicacion.producto ALTER COLUMN imagen TYPE BYTEA USING decode(imagen, 'base64');
