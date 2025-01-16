@@ -17,7 +17,7 @@ public class LoginController extends AppController {
 
         Usuario usuario = Usuario.findFirst("email = ?", email);
 
-        if (usuario != null && usuario.checkPassword(password)) {
+        if (usuario != null && usuario.getStatus().equals("activo") && usuario.checkPassword(password)) {
             String token = usuario.generateJwt();
 
             // Construir el JSON de respuesta
