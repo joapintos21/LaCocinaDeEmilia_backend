@@ -4,6 +4,7 @@ public class CarritoRequest {
     private int userId;
     private int productoId;
     private int cantidad;
+    private int adicionalId;
 
     // Getters y Setters
     public int getUserId() {
@@ -16,6 +17,14 @@ public class CarritoRequest {
 
     public int getProductoId() {
         return productoId;
+    }
+
+    public void setAdicionalId(int adicionalId) {
+        this.adicionalId = adicionalId;
+    }
+
+    public int getAdicionalId() {
+        return adicionalId;
     }
 
     public void setProductoId(int productoId) {

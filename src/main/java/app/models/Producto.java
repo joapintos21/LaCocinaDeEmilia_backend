@@ -72,6 +72,17 @@ public class Producto extends Model {
         }
         jsonObject.put("descuentos", descuentosArray);
 
+        // Usamos una consulta con JOIN para obtener los adicionales relacionados
+        List<Adicional> adicionales = Adicional.findBySQL(
+                "SELECT a.* FROM aplicacion.Adicional a " +
+                        "JOIN aplicacion.Producto_Adicional pa ON a.id = pa.adicional_id " +
+                        "WHERE pa.producto_id = ?",
+                this.getId());
+
+        JSONArray adicionalesJson = new JSONArray();
+        adicionales.forEach(adicional -> adicionalesJson.put(adicional.toJson()));
+        jsonObject.put("adicionales", adicionalesJson);
+
         return jsonObject;
     }
 }

@@ -11,12 +11,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class InstagramController extends AppController {
-
-    // private static final String INSTAGRAM_ACCESS_TOKEN =
-    // "IGAB71kP60u6RBZAFBuYWhjU0xFX243bVhkVnVQckctZATlSSHRtZAnF1NzFtdC1ZAdlRhd3lWaGZAyZAFNZAWHJYZA0RSNUV5Q19LOWFWMldodzVhbl9xT3dodnN3dkt1eTZAvMzFIQmNqRWZAiVnBwN0lSYlFBN2FpdjZAiMmM1QkpxOGRMYwZDZD";
-    // private static final String INSTAGRAM_USER_ID = "8816356138401496";
-    private static final String INSTAGRAM_USER_ID = "9273154079403236";
-    private static final String INSTAGRAM_ACCESS_TOKEN = "IGAB71kP60u6RBZAE5jRmp6NVpsdnZABN2lVajBPS1VMaHBFREUzZAFB2WDdnLUJQM0lCdUlRNEswcE9zcVFPaTJrSTJBclpaV2R4SUtCM09kM0l5SW5CUFk1R0J3cW9fYkF5RlJQa3FPVzBqM24zcDlvRGZAYM1VKb1NmbDFiY3Q2OAZDZD";
+    private static final String INSTAGRAM_USER_ID = "8749086781868712";
+    private static final String INSTAGRAM_ACCESS_TOKEN = "IGAB71kP60u6RBZAFAyLWg5ak55TWoyZAlNVX3RCbi1GWVN1eEt1bnlETm9vdVM5MmlLc0RDbjhJYTNjRkVqLVo1QnFXV1c4ZA0ozSG9JWUFIdmRCRmZAaY210emJudGQwaFN4cENxczdlTldobFFuZAFhPek1QbVZA2Vm5MMGtzOU9JNAZDZD\n";
 
     @GET
     public void obtenerMedia() {
@@ -24,6 +20,7 @@ public class InstagramController extends AppController {
             // URL para la API de Instagram
             String apiUrl = "https://graph.instagram.com/" + INSTAGRAM_USER_ID + "/media"
                     + "?fields=id,media_type,media_url,thumbnail_url,permalink,caption,timestamp"
+                    + "&limit=5"
                     + "&access_token=" + INSTAGRAM_ACCESS_TOKEN;
 
             // Configuración de la conexión
@@ -42,7 +39,6 @@ public class InstagramController extends AppController {
             }
             reader.close();
 
-            // Convertir respuesta en JSON
             JSONObject responseJson = new JSONObject(responseBuilder.toString());
             JSONArray mediaData = responseJson.getJSONArray("data");
 

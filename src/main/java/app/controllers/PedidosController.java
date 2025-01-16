@@ -7,11 +7,11 @@ import app.models.Pack;
 import app.models.Pago;
 import app.models.Adicional;
 import app.models.Cliente;
-import app.models.Cocinero;
 import app.models.Direccion;
 import app.models.Envio;
 import app.models.EstadoPedido;
 import app.models.PedidoProducto;
+import app.models.PedidoProductoAdicional;
 import app.models.PedidoHistorico;
 import app.models.PedidoPack;
 import app.models.Usuario;
@@ -32,7 +32,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.sql.Date;
-import java.time.LocalDate;
 
 public class PedidosController extends AppController {
 
@@ -304,13 +303,13 @@ public class PedidosController extends AppController {
             }
 
             if (fechaEnvio != null && !fechaEnvio.isEmpty()) {
-            pedido.set("fecha_entrega", Date.valueOf(fechaEnvio));
-        }
+                pedido.set("fecha_entrega", Date.valueOf(fechaEnvio));
+            }
 
             Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
-            //LocalDate fechaEnvioDate = LocalDate.parse(fechaEnvio);
-            //envio.set("fechaEnvio", Date.valueOf(fechaEnvioDate));
-            //envio.saveIt();
+            // LocalDate fechaEnvioDate = LocalDate.parse(fechaEnvio);
+            // envio.set("fechaEnvio", Date.valueOf(fechaEnvioDate));
+            // envio.saveIt();
 
             // Verificar el método de pago
             if (metodoPagoId == 1) {
@@ -427,7 +426,21 @@ public class PedidosController extends AppController {
                     productoJson.put("descripcion", producto.get("descripcion"));
                     productoJson.put("cantidad", pedidoProducto.get("cantidad"));
                     productoJson.put("precio", producto.get("precio"));
+                    // Verificar si hay un adicional asociado al PedidoProducto
+                    PedidoProductoAdicional pedidoAdicional = PedidoProductoAdicional.findFirst(
+                            "pedido_producto_id = ?", pedidoProducto.getId());
 
+                    if (pedidoAdicional != null) {
+                        Adicional adicional = Adicional.findById(pedidoAdicional.get("adicional_id"));
+                        if (adicional != null) {
+                            JSONObject adicionalJson = new JSONObject();
+                            adicionalJson.put("id", adicional.get("id"));
+                            adicionalJson.put("descripcion", adicional.get("descripcion"));
+                            adicionalJson.put("costoAdicional", adicional.get("costoAdicional"));
+
+                            productoJson.put("adicional", adicionalJson);
+                        }
+                    }
                     // Agregar el producto al array de productos
                     productosJsonArray.put(productoJson);
                 }
@@ -538,7 +551,8 @@ public class PedidosController extends AppController {
 
                 try {
                     System.out.println("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
-                    registrarCambioEnHistorial(pedidoId, estadoAnterior, estadoAnterior, userId, "Pedido reasignado a nueva cocinera", new java.sql.Timestamp(System.currentTimeMillis()));
+                    registrarCambioEnHistorial(pedidoId, estadoAnterior, estadoAnterior, userId,
+                            "Pedido reasignado a nueva cocinera", new java.sql.Timestamp(System.currentTimeMillis()));
                 } catch (Exception e) {
                     System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
                     e.printStackTrace();
@@ -566,10 +580,11 @@ public class PedidosController extends AppController {
                 Integer estadoAnterior = pedido.getInteger("estado");
                 pedido.set("estado", 3);
                 pedido.saveIt();
-                
+
                 try {
                     System.out.println("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
-                    registrarCambioEnHistorial(pedidoId, estadoAnterior, 3, pedido.getInteger("cocinera_asignada"), "Pedido marcado como terminado", new java.sql.Timestamp(System.currentTimeMillis()));
+                    registrarCambioEnHistorial(pedidoId, estadoAnterior, 3, pedido.getInteger("cocinera_asignada"),
+                            "Pedido marcado como terminado", new java.sql.Timestamp(System.currentTimeMillis()));
                 } catch (Exception e) {
                     System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
                     e.printStackTrace();
@@ -600,11 +615,10 @@ public class PedidosController extends AppController {
                 JSONObject pedidoJson = pedido.toJson();
 
                 Direccion direccion = Direccion.findFirst(
-                    "id IN (SELECT direccion_id FROM aplicacion.Envio WHERE pedido_id = ?)", pedido.getId());
-            if (direccion != null) {
-                pedidoJson.put("direccion", direccion.get("direccion"));
-            }
-
+                        "id IN (SELECT direccion_id FROM aplicacion.Envio WHERE pedido_id = ?)", pedido.getId());
+                if (direccion != null) {
+                    pedidoJson.put("direccion", direccion.get("direccion"));
+                }
 
                 if (!pedidoJson.has("cadete_asignado")) {
                     pedidoJson.put("cadete_asignado", JSONObject.NULL);
@@ -657,7 +671,8 @@ public class PedidosController extends AppController {
 
                 try {
                     System.out.println("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
-                    registrarCambioEnHistorial(pedidoId, estadoAnterior, estadoAnterior, userId, "Pedido reasignado a nuevo cadete", new java.sql.Timestamp(System.currentTimeMillis()));
+                    registrarCambioEnHistorial(pedidoId, estadoAnterior, estadoAnterior, userId,
+                            "Pedido reasignado a nuevo cadete", new java.sql.Timestamp(System.currentTimeMillis()));
                 } catch (Exception e) {
                     System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
                     e.printStackTrace();
@@ -675,60 +690,60 @@ public class PedidosController extends AppController {
         }
     }
 
- @PUT
- public void marcarComoEntregado() {
-     try {
-         JSONObject body = new JSONObject(getRequestString());
- 
-         if (!body.has("pedido_id")) {
-             respond("{\"error\": \"El parámetro pedido_id es requerido.\"}")
-                 .contentType("application/json").status(400);
-             return;
-         }
- 
-         int pedidoId = body.getInt("pedido_id");
-         Pedido pedido = Pedido.findById(pedidoId);
-         if (pedido == null) {
-             respond("{\"error\": \"Pedido no encontrado.\"}")
-                 .contentType("application/json").status(404);
-             return;
-         }
- 
-         Integer estadoAnterior = pedido.getInteger("estado");
-         pedido.set("estado", 4);
-         pedido.saveIt();
- 
-         Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
-         if (envio != null) {
-             envio.set("entregado", true);
-             envio.set("fechaenvio", new java.sql.Timestamp(System.currentTimeMillis()));
-             envio.saveIt();
-         } else {
-             System.err.println("No se encontró un registro de envío para el pedido ID: " + pedidoId);
-         }
- 
-         try {
-             if (pedido.getInteger("cadete_asignado") != null) {
-                 registrarCambioEnHistorial(pedidoId, estadoAnterior, 4, pedido.getInteger("cadete_asignado"),
-                     "Pedido marcado como entregado", new java.sql.Timestamp(System.currentTimeMillis()));
-             } else {
-                 System.err.println("El pedido no tiene un cadete asignado.");
-             }
-         } catch (Exception e) {
-             System.err.println("Error al registrar el cambio en el historial: " + e.getMessage());
-             e.printStackTrace();
-         }
- 
-         respond("{\"message\": \"Pedido y envío marcados como entregados.\"}")
-             .contentType("application/json").status(200);
- 
-     } catch (Exception e) {
-         System.err.println("Error al marcar pedido como entregado: " + e.getMessage());
-         e.printStackTrace();
-         respond("{\"error\": \"Error al marcar pedido como entregado: " + e.getMessage() + "\"}")
-             .contentType("application/json").status(500);
-     }
- }
+    @PUT
+    public void marcarComoEntregado() {
+        try {
+            JSONObject body = new JSONObject(getRequestString());
+
+            if (!body.has("pedido_id")) {
+                respond("{\"error\": \"El parámetro pedido_id es requerido.\"}")
+                        .contentType("application/json").status(400);
+                return;
+            }
+
+            int pedidoId = body.getInt("pedido_id");
+            Pedido pedido = Pedido.findById(pedidoId);
+            if (pedido == null) {
+                respond("{\"error\": \"Pedido no encontrado.\"}")
+                        .contentType("application/json").status(404);
+                return;
+            }
+
+            Integer estadoAnterior = pedido.getInteger("estado");
+            pedido.set("estado", 4);
+            pedido.saveIt();
+
+            Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
+            if (envio != null) {
+                envio.set("entregado", true);
+                envio.set("fechaenvio", new java.sql.Timestamp(System.currentTimeMillis()));
+                envio.saveIt();
+            } else {
+                System.err.println("No se encontró un registro de envío para el pedido ID: " + pedidoId);
+            }
+
+            try {
+                if (pedido.getInteger("cadete_asignado") != null) {
+                    registrarCambioEnHistorial(pedidoId, estadoAnterior, 4, pedido.getInteger("cadete_asignado"),
+                            "Pedido marcado como entregado", new java.sql.Timestamp(System.currentTimeMillis()));
+                } else {
+                    System.err.println("El pedido no tiene un cadete asignado.");
+                }
+            } catch (Exception e) {
+                System.err.println("Error al registrar el cambio en el historial: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            respond("{\"message\": \"Pedido y envío marcados como entregados.\"}")
+                    .contentType("application/json").status(200);
+
+        } catch (Exception e) {
+            System.err.println("Error al marcar pedido como entregado: " + e.getMessage());
+            e.printStackTrace();
+            respond("{\"error\": \"Error al marcar pedido como entregado: " + e.getMessage() + "\"}")
+                    .contentType("application/json").status(500);
+        }
+    }
 
     private void crearPago(Pedido pedido, Integer metodoPagoId, String estadoPago, BigDecimal monto) {
         Pago pago = new Pago();
@@ -739,7 +754,8 @@ public class PedidosController extends AppController {
         pago.saveIt();
     }
 
-    private void registrarCambioEnHistorial(int pedidoId, Integer estadoAnterior, Integer estadoNuevo, int usuarioId, String observaciones, java.sql.Timestamp fechaCambio) {
+    private void registrarCambioEnHistorial(int pedidoId, Integer estadoAnterior, Integer estadoNuevo, int usuarioId,
+            String observaciones, java.sql.Timestamp fechaCambio) {
         try {
             PedidoHistorico historial = new PedidoHistorico();
             historial.set("pedido_id", pedidoId);
@@ -759,5 +775,5 @@ public class PedidosController extends AppController {
             e.printStackTrace();
         }
     }
-    
+
 }
