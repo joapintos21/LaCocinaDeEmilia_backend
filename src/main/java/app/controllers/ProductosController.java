@@ -11,23 +11,43 @@ import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Base64;
 import java.util.List;
 
 public class ProductosController extends AppController {
 
-    // Crear un nuevo producto
     @POST
-    public void create(Producto producto) {
+    public void create() {
         try {
-            if (producto.save()) {
-                respond(producto.toJson().toString()).contentType("application/json").status(200);
+            JSONObject body = new JSONObject(getRequestString()); // Recibir JSON
+
+            String descripcion = body.getString("descripcion");
+            double precio = body.getDouble("precio");
+            int categoriaId = body.getInt("categoria_id");
+            boolean visible = body.getBoolean("visible");
+            String imagenBase64 = body.optString("imagen", null); // Opcional
+
+            byte[] imagenBytes = null;
+            if (imagenBase64 != null && !imagenBase64.isEmpty()) {
+                imagenBytes = Base64.getDecoder().decode(imagenBase64); // Convertir Base64 a bytes
+            }
+
+            Producto producto = new Producto();
+            producto.set("descripcion", descripcion);
+            producto.set("precio", precio);
+            producto.set("categoria_id", categoriaId);
+            producto.set("visible", visible);
+            if (imagenBytes != null) {
+                producto.set("imagen", imagenBytes); // Guardar en BYTEA
+            }
+
+            if (producto.saveIt()) {
+                respond(producto.toJson().toString()).contentType("application/json").status(201);
             } else {
-                String errorJson = "{\"error\": " + producto.errors().toJSON() + "}";
-                respond(errorJson).contentType("application/json").status(400);
+                respond(producto.errors().toJSON()).contentType("application/json").status(400);
             }
         } catch (Exception e) {
-            String errorJson = "{\"error\": \"" + e.getMessage() + "\"}";
-            respond(errorJson).contentType("application/json").status(500);
+            respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 
