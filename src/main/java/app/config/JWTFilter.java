@@ -12,6 +12,8 @@ public class JWTFilter extends HttpSupportFilter {
             "/hooks/handleWebhook",
             "/usuarios/create",
             "/usuarios/validarToken",
+            "/usuarios/forgotPassword",
+            "/usuarios/resetPassword",
             "/login/iniciarSesion",
             "/instagram/obtenerMedia");
 

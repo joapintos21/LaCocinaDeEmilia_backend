@@ -10,6 +10,7 @@ import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.POST;
 import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import app.models.Rol;
 import app.models.Usuario;
@@ -180,5 +181,64 @@ public class UsuariosController extends AppController {
                     .contentType("application/json")
                     .status(400);
         }
+    }
+
+    // Endpoint para solicitar recuperación de contraseña
+    @POST
+    public void forgotPassword() {
+        JSONObject body = new JSONObject(getRequestString());
+        String email = body.getString("email");
+
+        Usuario user = Usuario.findFirst("email = ?", email);
+        if (user == null) {
+            respond("{\"error\": \"No se encontró un usuario con ese correo.\"}")
+                    .contentType("application/json")
+                    .status(404);
+            return;
+        }
+
+        // Generar token de recuperación
+        String token = user.generateJwtValidation();
+        user.set("reset_token", token);
+        user.saveIt();
+
+        // Enviar correo con enlace de recuperación
+        String resetLink = "http://localhost:3000/reset-password?token=" + token;
+        String emailContent = String.format(
+                "<p>Hola %s,</p><p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>" +
+                        "<a href='%s'>Restablecer Contraseña</a><p>Este enlace es válido por un tiempo limitado.</p>",
+                user.get("nombre"), resetLink);
+
+        EmailService emailService = new EmailService();
+        emailService.sendTestEmail(email, "Recuperación de Contraseña", emailContent);
+
+        respond("{\"message\": \"Se ha enviado un correo con instrucciones para recuperar la contraseña.\"}")
+                .contentType("application/json")
+                .status(200);
+    }
+
+    // Endpoint para resetear la contraseña
+    @POST
+    public void resetPassword() {
+        JSONObject body = new JSONObject(getRequestString());
+        String token = body.getString("token");
+        String newPassword = body.getString("password");
+
+        Usuario user = Usuario.findFirst("reset_token = ?", token);
+        if (user == null) {
+            respond("{\"error\": \"Token inválido o expirado.\"}")
+                    .contentType("application/json")
+                    .status(400);
+            return;
+        }
+
+        // Actualizar contraseña
+        user.setPassword(newPassword);
+        user.set("reset_token", null); // Eliminar token usado
+        user.saveIt();
+
+        respond("{\"message\": \"Contraseña restablecida correctamente.\"}")
+                .contentType("application/json")
+                .status(200);
     }
 }
