@@ -225,6 +225,9 @@ public class UsuariosController extends AppController {
         String newPassword = body.getString("password");
 
         Usuario user = Usuario.findFirst("reset_token = ?", token);
+        if (user != null) {
+            user = Usuario.verifyJwt(token);
+        }
         if (user == null) {
             respond("{\"error\": \"Token inválido o expirado.\"}")
                     .contentType("application/json")
