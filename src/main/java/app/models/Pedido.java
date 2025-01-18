@@ -111,16 +111,28 @@ public class Pedido extends Model {
         for (PedidoProducto pedidoProducto : pedidoProductos) {
             Producto producto = Producto.findById(pedidoProducto.get("producto_id"));
             if (producto != null) {
+                BigDecimal precioTotal = producto.getPrecioTotalConDescuento();
+                String descripcion = producto.getString("descripcion");
+
+                // Verificar si hay un adicional asociado al PedidoProducto
+                List<PedidoProductoAdicional> pedidoAdicionales = PedidoProductoAdicional.where(
+                        "pedido_producto_id = ?", pedidoProducto.getId());
+                for (PedidoProductoAdicional pedidoAdicional : pedidoAdicionales) {
+                    Adicional adicional = Adicional.findById(pedidoAdicional.get("adicional_id"));
+                    if (adicional != null) {
+                        descripcion += " + " + adicional.get("descripcion");
+                        precioTotal = precioTotal.add(adicional.getBigDecimal("costoAdicional"));
+                    }
+                }
+
                 PedidoDetalle detalle = new PedidoDetalle();
                 detalle.set("pedido_id", this.getId());
-                detalle.set("descripcion", producto.get("descripcion"));
+                detalle.set("descripcion", descripcion);
                 detalle.set("cantidad", pedidoProducto.get("cantidad"));
-                detalle.set("precio_unitario", producto.getPrecioTotalConDescuento());
-                detalle.set("subtotal", producto.getPrecioTotalConDescuento()
-                        .multiply(new BigDecimal(pedidoProducto.getInteger("cantidad"))));
+                detalle.set("precio_unitario", precioTotal);
+                detalle.set("subtotal", precioTotal.multiply(new BigDecimal(pedidoProducto.getInteger("cantidad"))));
                 detalle.saveIt();
-                total = total.add(producto.getPrecioTotalConDescuento()
-                        .multiply(new BigDecimal(pedidoProducto.getInteger("cantidad"))));
+                total = total.add(precioTotal.multiply(new BigDecimal(pedidoProducto.getInteger("cantidad"))));
             }
         }
 
