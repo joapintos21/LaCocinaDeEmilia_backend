@@ -17,6 +17,8 @@ import app.models.Pedido;
 import app.models.PedidoPack;
 import app.models.PedidoProducto;
 import app.models.Producto;
+import app.models.PedidoProductoAdicional;
+import app.models.Adicional;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -120,6 +122,20 @@ public class PagosController extends AppController {
 						.put("title", p.getString("descripcion"))
 						.put("quantity", item.getInteger("cantidad"))
 						.put("unitPrice", precioConDescuento));
+
+				// Verificar si hay un adicional asociado al PedidoProducto
+				List<PedidoProductoAdicional> pedidoAdicionales = PedidoProductoAdicional.where(
+						"pedido_producto_id = ?", item.getId());
+				for (PedidoProductoAdicional pedidoAdicional : pedidoAdicionales) {
+					Adicional adicional = Adicional.findFirst("id = ?", pedidoAdicional.get("adicional_id"));
+					BigDecimal costoAdicional = adicional.getBigDecimal("costoadicional");
+					subtotal = subtotal.add(costoAdicional.multiply(BigDecimal.valueOf(item.getInteger("cantidad"))));
+
+					itemsArray.put(new JSONObject()
+							.put("title", "Adicional: " + adicional.getString("descripcion"))
+							.put("quantity", item.getInteger("cantidad"))
+							.put("unitPrice", costoAdicional));
+				}
 			}
 
 			for (PedidoPack itemPack : itemsPacks) {
@@ -179,7 +195,7 @@ public class PagosController extends AppController {
 					.backUrls(backUrls)
 					.externalReference(Integer.toString(userIdFromToken)) // Número de pedido interno
 					.notificationUrl(
-							"https://eddb-2800-a4-29dc-bb00-7d24-90af-803a-e96c.ngrok-free.app/hooks/handleWebhook")
+							"https://4e6e-2800-a4-2900-ab00-49be-bbca-56-8f09.ngrok-free.app/hooks/handleWebhook")
 					.autoReturn("approved") // Retorno automático al éxito
 					.build();
 

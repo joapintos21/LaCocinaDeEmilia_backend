@@ -29,6 +29,7 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.resources.payment.Payment;
 
 import java.math.BigDecimal;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.sql.Date;
@@ -426,6 +427,12 @@ public class PedidosController extends AppController {
                     productoJson.put("descripcion", producto.get("descripcion"));
                     productoJson.put("cantidad", pedidoProducto.get("cantidad"));
                     productoJson.put("precio", producto.get("precio"));
+
+                    byte[] imagenBytes = producto.getBytes("imagen");
+                    if (imagenBytes != null) {
+                        String imagenBase64 = Base64.getEncoder().encodeToString(imagenBytes);
+                        productoJson.put("imagen", imagenBase64);
+                    }
                     // Verificar si hay un adicional asociado al PedidoProducto
                     PedidoProductoAdicional pedidoAdicional = PedidoProductoAdicional.findFirst(
                             "pedido_producto_id = ?", pedidoProducto.getId());
