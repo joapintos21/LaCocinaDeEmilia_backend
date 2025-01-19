@@ -35,6 +35,7 @@ public class Permiso extends Model {
         JSONObject json = new JSONObject();
         json.put("id", getId());
         json.put("rol", Rol.findById(get("rol_id")).get("nombre"));
+        json.put("rol_id", get("rol_id"));
         json.put("endpoint", formatText(get("endpoint").toString()));
         json.put("tipo", formatText(get("tipo").toString()));
         return json;
