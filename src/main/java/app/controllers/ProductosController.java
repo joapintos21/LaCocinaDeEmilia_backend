@@ -53,23 +53,44 @@ public class ProductosController extends AppController {
 
     // Actualizar un producto
     @PUT
-    public void update(Producto newProduct) {
-        int id = Integer.parseInt(param("id"));
-        Producto producto = Producto.findById(id);
+    public void update() {
+        try {
+            JSONObject body = new JSONObject(getRequestString()); // Recibir JSON
 
-        if (producto != null) {
-            try {
-                producto.fromMap(newProduct.toMap());
+            int id = body.getInt("id");
+            Producto producto = Producto.findById(id);
+
+            if (producto != null) {
+                if (body.has("descripcion") && !body.getString("descripcion").isEmpty()) {
+                    producto.set("descripcion", body.getString("descripcion"));
+                }
+                if (body.has("precio")) {
+                    producto.set("precio", body.getDouble("precio"));
+                }
+                if (body.has("categoria_id")) {
+                    producto.set("categoria_id", body.getInt("categoria_id"));
+                }
+                if (body.has("visible")) {
+                    producto.set("visible", body.getBoolean("visible"));
+                }
+
+                // Actualizar la imagen si se proporciona
+                String imagenBase64 = body.optString("imagen", null);
+                if (imagenBase64 != null && !imagenBase64.isEmpty()) {
+                    byte[] imagenBytes = Base64.getDecoder().decode(imagenBase64);
+                    producto.set("imagen", imagenBytes);
+                }
+
                 if (producto.saveIt()) {
                     respond(producto.toJson().toString()).contentType("application/json").status(200);
                 } else {
                     respond(producto.errors().toJSON()).contentType("application/json").status(400);
                 }
-            } catch (Exception e) {
-                respond("Error al actualizar el producto").contentType("application/json").status(500);
+            } else {
+                respond("Producto no encontrado").contentType("application/json").status(404);
             }
-        } else {
-            respond("Producto no encontrado").contentType("application/json").status(404);
+        } catch (Exception e) {
+            respond("Error al actualizar el producto").contentType("application/json").status(500);
         }
     }
 
