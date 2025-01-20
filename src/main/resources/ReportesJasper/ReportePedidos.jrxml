@@ -11,6 +11,8 @@
 			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
 		</conditionalStyle>
 	</style>
+	<parameter name="fechaInicio" class="java.sql.Date"/>
+	<parameter name="fechaFin" class="java.sql.Date"/>
 	<query language="SQL"><![CDATA[select id, 
 			nombre_cliente, 
 			telefono, 
@@ -25,7 +27,8 @@
 			nombre_cadete, 
 			fecha_entrega, 
 			detalles_pedido
-from aplicacion.vista_pedidos_detalles]]></query>
+from aplicacion.vista_pedidos_detalles
+WHERE fecha_creacion >= $P{fechaInicio} AND fecha_creacion <= $P{fechaFin}]]></query>
 	<field name="id" class="java.lang.Integer">
 		<property name="com.jaspersoft.studio.field.name" value="id"/>
 		<property name="com.jaspersoft.studio.field.label" value="id"/>
