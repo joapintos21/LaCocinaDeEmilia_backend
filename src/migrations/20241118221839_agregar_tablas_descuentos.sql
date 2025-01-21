@@ -16,9 +16,10 @@ ALTER TABLE aplicacion.Descuento
 ALTER COLUMN valor SET NOT NULL;
 
 CREATE TABLE aplicacion.Descuento_Producto (
-    id SERIAL PRIMARY KEY,
+    id SERIAL,
     producto_id INT REFERENCES aplicacion.Producto(id) ON DELETE CASCADE,
-    descuento_id INT REFERENCES aplicacion.Descuento(id) ON DELETE CASCADE
+    descuento_id INT REFERENCES aplicacion.Descuento(id) ON DELETE CASCADE,
+    CONSTRAINT descuento_producto_pkey PRIMARY KEY (producto_id, descuento_id)
 );
 
 CREATE TABLE aplicacion.Descuento_Pack (
