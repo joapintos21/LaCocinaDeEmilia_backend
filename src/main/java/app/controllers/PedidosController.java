@@ -3,6 +3,7 @@ package app.controllers;
 import app.models.Pedido;
 import app.models.PedidoDetalle;
 import app.models.Producto;
+import app.models.ProductosPDF;
 import app.models.Pack;
 import app.models.Pago;
 import app.models.Adicional;
@@ -15,6 +16,7 @@ import app.models.PedidoProductoAdicional;
 import app.models.PedidoHistorico;
 import app.models.PedidoPack;
 import app.models.Usuario;
+import app.services.EmailService;
 
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
@@ -335,6 +337,31 @@ public class PedidosController extends AppController {
                         if ("approved".equals(status)) {
                             crearPago(pedido, metodoPagoId, "APROBADO", transactionAmount);
                             pedido.set("estado", 2); // LISTO_PARA_PREPARAR
+                            // Obtener el cliente asociado al pedido
+                            Cliente cliente = Cliente.findById(pedido.get("cliente_id"));
+                            if (cliente == null) {
+                                respond("{\"error\": \"Cliente no encontrado\"}").contentType("application/json")
+                                        .status(404);
+                                return;
+                            }
+                            Usuario user = Usuario.findById(cliente.get("usuario_id"));
+                            String emailCliente = user.getString("email");
+
+                            // Obtener productos del pedido
+                            List<PedidoProducto> productosPedido = PedidoProducto.where("pedido_id = ?", pedidoId);
+
+                            for (PedidoProducto pedidoProducto : productosPedido) {
+                                int productoId = pedidoProducto.getInteger("producto_id");
+
+                                // Verificar si el producto tiene un PDF asociado
+                                ProductosPDF pdfProducto = ProductosPDF.findFirst("producto_id = ?", productoId);
+                                if (pdfProducto != null) {
+                                    String pdfUrl = pdfProducto.getString("pdf_url");
+
+                                    // Enviar correo con el PDF
+                                    EmailService.enviarCorreoConPDF(emailCliente, pdfUrl);
+                                }
+                            }
                         } else if ("pending".equals(status) || "in_process".equals(status)) {
                             crearPago(pedido, metodoPagoId, "PENDIENTE", transactionAmount);
                             pedido.set("estado", 2); // LISTO_PARA_PREPARAR
