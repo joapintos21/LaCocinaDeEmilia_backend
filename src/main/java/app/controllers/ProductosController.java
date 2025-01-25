@@ -1,8 +1,8 @@
 package app.controllers;
 
-import app.models.Adicional;
-import app.models.DescuentoProducto;
-import app.models.Producto;
+import java.util.Base64;
+import java.util.List;
+
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
@@ -11,8 +11,10 @@ import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Base64;
-import java.util.List;
+import app.models.Adicional;
+import app.models.AdicionalProducto;
+import app.models.DescuentoProducto;
+import app.models.Producto;
 
 public class ProductosController extends AppController {
 
@@ -191,6 +193,27 @@ public class ProductosController extends AppController {
                 respond(descuentoProducto.toJson().toString()).contentType("application/json").status(201);
             } else {
                 respond(descuentoProducto.errors().toJSON()).contentType("application/json").status(400);
+            }
+        } catch (Exception e) {
+            respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
+        }
+    }
+
+    @POST
+    public void crearAdicional() {
+        try {
+            JSONObject body = new JSONObject(getRequestString());
+            int productoId = body.getInt("producto_id");
+            int adicionalId = body.getInt("adicional_id");
+
+            AdicionalProducto adicionalProducto = new AdicionalProducto();
+            adicionalProducto.set("producto_id", productoId);
+            adicionalProducto.set("adicional_id", adicionalId);
+
+            if (adicionalProducto.saveIt()) {
+                respond(adicionalProducto.toJson().toString()).contentType("application/json").status(201);
+            } else {
+                respond(adicionalProducto.errors().toJSON()).contentType("application/json").status(400);
             }
         } catch (Exception e) {
             respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);

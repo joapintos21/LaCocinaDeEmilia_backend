@@ -12,4 +12,5 @@ VALUES ('permisos', 'ESCRITURA', 1),
 ('usuarios', 'ESCRITURA', 1),
 ('packs', 'ESCRITURA', 1),
 ('descuentos', 'ESCRITURA', 1),
-('pedidos', 'ESCRITURA', 1);
+('pedidos', 'ESCRITURA', 1),
+('adicionales', 'ESCRITURA', 1);
