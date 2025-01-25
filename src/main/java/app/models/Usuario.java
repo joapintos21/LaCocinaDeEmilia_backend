@@ -1,5 +1,6 @@
 package app.models;
 
+import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.Date;
 
@@ -14,6 +15,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 
 @Table("gestion_usuarios.Usuario")
 public class Usuario extends Model {
+
     private static final String SECRET_KEY = Base64.getEncoder().encodeToString("secret_key_jwt_token".getBytes());
     private static final long EXPIRATION_TIME = 604800000; // 7 dias en milisegundos
     private static final long VALIDATION_EXPIRATION_TIME = 86400000; // 24hs en milisegundos
@@ -22,7 +24,10 @@ public class Usuario extends Model {
         validatePresenceOf("email", "password", "nombre", "telefono", "rol_id");
     }
 
-    // Métodos actuales...
+    public void setFechaCreacion() {
+    // Convertir la fecha actual a Timestamp
+    set("fecha_creacion", new Timestamp(System.currentTimeMillis()));
+}
 
     // Método para obtener el estado
     public String getStatus() {
@@ -168,6 +173,7 @@ public class Usuario extends Model {
         jsonObject.put("nombre", get("nombre"));
         jsonObject.put("email", get("email"));
         jsonObject.put("telefono", get("telefono"));
+        jsonObject.put("fecha_creacion", get("fecha_creacion"));
         jsonObject.put("rol_id", get("rol_id"));
         jsonObject.put("rol", Rol.findById(get("rol_id")).get("nombre")); // Añadir el nombre del rol
         jsonObject.put("status", getStatus());
