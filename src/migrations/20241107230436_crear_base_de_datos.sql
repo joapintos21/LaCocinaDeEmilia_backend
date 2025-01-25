@@ -28,6 +28,7 @@ CREATE TABLE gestion_usuarios.Usuario (
     password VARCHAR(255) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     telefono VARCHAR(20) UNIQUE NOT NULL,
+    fecha_creacion DATE NOT NULL,
     rol_id INT REFERENCES gestion_usuarios.Rol(id),
     status VARCHAR(10) DEFAULT 'pendiente' CHECK (status IN ('activo', 'pendiente', 'inactivo'))
 );
@@ -198,6 +199,7 @@ CREATE TABLE aplicacion.Adicional (
 
 -- Crear tabla ProductoAdicional para relacionar productos y adicionales
 CREATE TABLE aplicacion.Producto_Adicional (
+    id SERIAL NOT NULL,
     producto_id INT REFERENCES aplicacion.Producto(id) ON DELETE CASCADE,
     adicional_id INT REFERENCES aplicacion.Adicional(id) ON DELETE CASCADE,
     PRIMARY KEY (producto_id, adicional_id)
