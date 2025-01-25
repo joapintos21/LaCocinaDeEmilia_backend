@@ -28,6 +28,7 @@ CREATE TABLE gestion_usuarios.Usuario (
     password VARCHAR(255) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     telefono VARCHAR(20) UNIQUE NOT NULL,
+    fecha_creacion DATE NOT NULL,
     rol_id INT REFERENCES gestion_usuarios.Rol(id),
     status VARCHAR(10) DEFAULT 'pendiente' CHECK (status IN ('activo', 'pendiente', 'inactivo'))
 );

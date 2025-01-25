@@ -20,53 +20,63 @@ public class UsuariosController extends AppController {
 
     // Crear un nuevo usuario con un rol
     @POST
-    public void create(Usuario user) {
-        try {
-            user.setPassword(user.getString("password"));
+public void create(Usuario user) {
+    try {
+        // Establecer la contraseña del usuario (en caso de que no se haya hecho)
+        user.setPassword(user.getString("password"));
 
-            if (user.save()) {
-                Integer rolId = user.getInteger("rol_id"); // Suponiendo que el rol viene con el usuario
-                if (rolId != null && rolId != 0) {
-                    user.assignRol(rolId); // Asigna el rol al usuario
-                }
-                String token = user.generateJwtValidation();
-                String validationLink = "http://localhost:3000/verificar?token=" + token;
+        // Establecer la fecha de creación del usuario con la fecha actual del sistema
+        user.setFechaCreacion(); // Esto asignará la fecha actual al campo "fecha_creacion" del usuario
 
-                EmailService emailService = new EmailService();
-                // Contenido del email en HTML
-                String contentText = String.format(
-                        "<p>Hola %s,</p><p>Gracias por registrarte en nuestra aplicación. " +
-                                "Por favor, confirma tu cuenta haciendo clic en el siguiente enlace:</p>" +
-                                "<a href='%s'>Confirma tu cuenta</a><p>¡Gracias!</p>",
-                        user.get("nombre"), validationLink);
-
-                emailService.sendTestEmail(
-                        user.getString("email"),
-                        "Validación de cuenta",
-                        contentText);
-
-                respond(user.formatoJSON().toString()).contentType("application/json").status(200);
-            } else {
-                // Construir una respuesta JSON con los errores de validación
-                String errorJson = "{\"error\": " + user.errors().toJSON() + "}";
-                respond(errorJson).contentType("application/json").status(400); // Devuelve un código de estado 400
-            }
-        } catch (Exception e) {
-            // Capturar la excepción y devolver un mensaje de error JSON
-            String errorMessage = e.getMessage();
-
-            // Opcionalmente, puedes filtrar el mensaje para obtener detalles específicos
-            if (errorMessage.contains("usuario_email_key")) {
-                errorMessage = "El correo electrónico ya está registrado.";
-            }
-            if (errorMessage.contains("usuario_telefono_key")) {
-                errorMessage = "El teléfono ya está registrado.";
+        // Intentar guardar el usuario
+        if (user.save()) {
+            // Obtener el rol del usuario (si existe)
+            Integer rolId = user.getInteger("rol_id");
+            if (rolId != null && rolId != 0) {
+                user.assignRol(rolId); // Asignar el rol al usuario
             }
 
-            String errorJson = "{\"error\": \"" + errorMessage + "\"}";
-            respond(errorJson).contentType("application/json").status(422);
+            // Generar token de validación de cuenta
+            String token = user.generateJwtValidation();
+            String validationLink = "http://localhost:3000/verificar?token=" + token;
+
+            // Enviar el email de validación
+            EmailService emailService = new EmailService();
+            String contentText = String.format(
+                    "<p>Hola %s,</p><p>Gracias por registrarte en nuestra aplicación. " +
+                            "Por favor, confirma tu cuenta haciendo clic en el siguiente enlace:</p>" +
+                            "<a href='%s'>Confirma tu cuenta</a><p>¡Gracias!</p>",
+                    user.get("nombre"), validationLink);
+
+            emailService.sendTestEmail(
+                    user.getString("email"),
+                    "Validación de cuenta",
+                    contentText);
+
+            // Responder con los datos del usuario
+            respond(user.formatoJSON().toString()).contentType("application/json").status(200);
+        } else {
+            // En caso de error, devolver los errores de validación en formato JSON
+            String errorJson = "{\"error\": " + user.errors().toJSON() + "}";
+            respond(errorJson).contentType("application/json").status(400);
         }
+    } catch (Exception e) {
+        // Capturar y devolver el error específico si ocurre
+        String errorMessage = e.getMessage();
+
+        // Opcionalmente, puedes personalizar el mensaje de error para situaciones específicas
+        if (errorMessage.contains("usuario_email_key")) {
+            errorMessage = "El correo electrónico ya está registrado.";
+        }
+        if (errorMessage.contains("usuario_telefono_key")) {
+            errorMessage = "El teléfono ya está registrado.";
+        }
+
+        String errorJson = "{\"error\": \"" + errorMessage + "\"}";
+        respond(errorJson).contentType("application/json").status(422);
     }
+}
+
 
     // Actualizar un usuario y su rol
     @PUT
