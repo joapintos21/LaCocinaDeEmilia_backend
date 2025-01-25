@@ -1,5 +1,11 @@
 package app.controllers;
 
+import app.config.FirebaseConfig;
+import app.models.Adicional;
+import app.models.AdicionalProducto;
+import app.models.DescuentoProducto;
+import app.models.Producto;
+import app.services.FirebaseStorageService;
 import java.util.Base64;
 import java.util.List;
 
@@ -11,36 +17,26 @@ import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import app.models.Adicional;
-import app.models.AdicionalProducto;
-import app.models.DescuentoProducto;
-import app.models.Producto;
 
 public class ProductosController extends AppController {
 
     @POST
     public void create() {
         try {
-            JSONObject body = new JSONObject(getRequestString()); // Recibir JSON
+            FirebaseConfig.initializeFirebase(); // Asegura que Firebase está inicializado
 
+            JSONObject body = new JSONObject(getRequestString());
             String descripcion = body.getString("descripcion");
             double precio = body.getDouble("precio");
             int categoriaId = body.getInt("categoria_id");
-            boolean visible = body.getBoolean("visible");
-            String imagenBase64 = body.optString("imagen", null); // Opcional
-
-            byte[] imagenBytes = null;
-            if (imagenBase64 != null && !imagenBase64.isEmpty()) {
-                imagenBytes = Base64.getDecoder().decode(imagenBase64); // Convertir Base64 a bytes
-            }
+            String imageUrl = body.optString("imagen", null); // Recibimos solo la URL, no Base64
 
             Producto producto = new Producto();
             producto.set("descripcion", descripcion);
             producto.set("precio", precio);
             producto.set("categoria_id", categoriaId);
-            producto.set("visible", visible);
-            if (imagenBytes != null) {
-                producto.set("imagen", imagenBytes); // Guardar en BYTEA
+            if (imageUrl != null) {
+                producto.set("imagen", imageUrl); // Guardamos solo la URL en la BD
             }
 
             if (producto.saveIt()) {
@@ -76,11 +72,10 @@ public class ProductosController extends AppController {
                     producto.set("visible", body.getBoolean("visible"));
                 }
 
-                // Actualizar la imagen si se proporciona
-                String imagenBase64 = body.optString("imagen", null);
-                if (imagenBase64 != null && !imagenBase64.isEmpty()) {
-                    byte[] imagenBytes = Base64.getDecoder().decode(imagenBase64);
-                    producto.set("imagen", imagenBytes);
+                // Actualizar la imagen solo si se proporciona una nueva URL
+                if (body.has("imagen") && !body.getString("imagen").isEmpty()) {
+                    String imageUrl = body.getString("imagen");
+                    producto.set("imagen", imageUrl); // Guardamos solo la URL en PostgreSQL
                 }
 
                 if (producto.saveIt()) {
@@ -89,10 +84,10 @@ public class ProductosController extends AppController {
                     respond(producto.errors().toJSON()).contentType("application/json").status(400);
                 }
             } else {
-                respond("Producto no encontrado").contentType("application/json").status(404);
+                respond("{\"error\": \"Producto no encontrado\"}").contentType("application/json").status(404);
             }
         } catch (Exception e) {
-            respond("Error al actualizar el producto").contentType("application/json").status(500);
+            respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 
@@ -168,13 +163,30 @@ public class ProductosController extends AppController {
     // Eliminar un producto
     @DELETE
     public void delete() {
-        int id = Integer.parseInt(param("id"));
-        Producto producto = Producto.findById(id);
-        if (producto != null) {
-            producto.delete();
-            respond("Producto eliminado correctamente").status(200);
-        } else {
-            respond("Producto no encontrado").status(404);
+        try {
+            int id = Integer.parseInt(param("id"));
+            Producto producto = Producto.findById(id);
+
+            if (producto != null) {
+                // Obtener la URL de la imagen antes de eliminar el producto
+                String imageUrl = producto.getString("imagen");
+
+                // Eliminar la imagen de Firebase
+                FirebaseStorageService.eliminarArchivo(imageUrl);
+
+                // Eliminar el producto de la base de datos
+                if (producto.delete()) {
+                    respond("{\"message\": \"Producto eliminado correctamente.\"}").contentType("application/json")
+                            .status(200);
+                } else {
+                    respond("{\"error\": \"No se pudo eliminar el producto.\"}").contentType("application/json")
+                            .status(400);
+                }
+            } else {
+                respond("{\"error\": \"Producto no encontrado.\"}").contentType("application/json").status(404);
+            }
+        } catch (Exception e) {
+            respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 

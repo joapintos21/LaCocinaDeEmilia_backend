@@ -1,7 +1,6 @@
 package app.models;
 
 import java.math.BigDecimal;
-import java.util.Base64;
 import java.util.List;
 
 import org.javalite.activejdbc.Model;
@@ -60,6 +59,7 @@ public class Producto extends Model {
         jsonObject.put("descripcion", get("descripcion"));
         jsonObject.put("precio", get("precio"));
         jsonObject.put("visible", get("visible"));
+        jsonObject.put("imagen", get("imagen"));
         // Obtener la categoría asociada
         Categoria categoria = Categoria.findById(get("categoria_id"));
         if (categoria != null) {
@@ -88,12 +88,6 @@ public class Producto extends Model {
         JSONArray adicionalesJson = new JSONArray();
         adicionales.forEach(adicional -> adicionalesJson.put(adicional.toJson()));
         jsonObject.put("adicionales", adicionalesJson);
-
-        byte[] imagenBytes = this.getBytes("imagen");
-        if (imagenBytes != null) {
-            String imagenBase64 = Base64.getEncoder().encodeToString(imagenBytes);
-            jsonObject.put("imagen", imagenBase64);
-        }
 
         return jsonObject;
     }

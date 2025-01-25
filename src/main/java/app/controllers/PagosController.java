@@ -195,7 +195,7 @@ public class PagosController extends AppController {
 					.backUrls(backUrls)
 					.externalReference(Integer.toString(userIdFromToken)) // Número de pedido interno
 					.notificationUrl(
-							"https://4e6e-2800-a4-2900-ab00-49be-bbca-56-8f09.ngrok-free.app/hooks/handleWebhook")
+							"https://eddb-2800-a4-29dc-bb00-7d24-90af-803a-e96c.ngrok-free.app/hooks/handleWebhook")
 					.autoReturn("approved") // Retorno automático al éxito
 					.build();
 
