@@ -1,20 +1,24 @@
 package app.controllers;
 
-import app.models.Gasto;
-import org.javalite.activeweb.AppController;
-import org.javalite.activeweb.annotations.PUT;
-import org.javalite.activeweb.annotations.DELETE;
-import org.javalite.activeweb.annotations.POST;
-import org.javalite.activeweb.annotations.GET;
-
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.javalite.activeweb.AppController;
+import org.javalite.activeweb.annotations.DELETE;
+import org.javalite.activeweb.annotations.GET;
+import org.javalite.activeweb.annotations.POST;
+import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.sql.Date;
-import java.text.SimpleDateFormat;
+import app.models.Gasto;
 
 public class GastosController extends AppController {
+
+    private static final Logger logger = LogManager.getLogger(GastosController.class);
 
     @PUT
     public void update() {
@@ -24,6 +28,7 @@ public class GastosController extends AppController {
 
             Gasto gasto = Gasto.findById(id);
             if (gasto == null) {
+                logger.error("Gasto no encontrado. ON UPDATE");
                 respond("{\"error\": \"Gasto no encontrado.\"}")
                         .contentType("application/json")
                         .status(404);
@@ -33,6 +38,7 @@ public class GastosController extends AppController {
             if (body.has("descripcion")) {
                 String descripcion = body.getString("descripcion").trim();
                 if (descripcion.isEmpty()) {
+                    logger.error("La descripción no puede estar vacía. ON UPDATE");
                     respond("{\"error\": \"La descripción no puede estar vacía.\"}")
                             .contentType("application/json")
                             .status(400);
@@ -44,6 +50,7 @@ public class GastosController extends AppController {
             if (body.has("monto")) {
                 double monto = body.getDouble("monto");
                 if (monto <= 0) {
+                    logger.error("El monto del gasto debe ser mayor que 0. ON UPDATE");
                     respond("{\"error\": \"El monto debe ser mayor que 0.\"}")
                             .contentType("application/json")
                             .status(400);
@@ -59,6 +66,7 @@ public class GastosController extends AppController {
                     Date fecha = new Date(dateFormat.parse(fechaStr).getTime());
                     gasto.set("fecha", fecha);
                 } catch (Exception e) {
+                    logger.error("La fecha del gasto no es válida. Debe estar en formato yyyy-MM-dd. ON UPDATE");
                     respond("{\"error\": \"La fecha no es válida. Debe estar en formato yyyy-MM-dd.\"}")
                             .contentType("application/json")
                             .status(400);
@@ -67,16 +75,18 @@ public class GastosController extends AppController {
             }
 
             if (gasto.save()) {
+                logger.info("Gasto actualizado correctamente: " + gasto.toString());
                 respond(gasto.toJson().toString())
                         .contentType("application/json")
                         .status(200);
             } else {
+                logger.error(gasto.errors().toString());
                 respond("{\"error\": " + gasto.errors().toJSON() + "}")
                         .contentType("application/json")
                         .status(400);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             respond("{\"error\": \"Error al actualizar el gasto: " + e.getMessage() + "\"}")
                     .contentType("application/json")
                     .status(500);
@@ -90,18 +100,20 @@ public class GastosController extends AppController {
 
             Gasto gasto = Gasto.findById(id);
             if (gasto == null) {
+                logger.error("Gasto no encontrado. ON DELETE");
                 respond("{\"error\": \"Gasto no encontrado.\"}")
                         .contentType("application/json")
                         .status(404);
                 return;
             }
 
+            logger.info("Gasto eliminado exitosamente: " + gasto.toString());
             gasto.delete();
             respond("{\"message\": \"Gasto eliminado exitosamente.\"}")
                     .contentType("application/json")
                     .status(200);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             respond("{\"error\": \"Error al eliminar el gasto: " + e.getMessage() + "\"}")
                     .contentType("application/json")
                     .status(500);
@@ -115,6 +127,7 @@ public class GastosController extends AppController {
 
             // Validar campos requeridos
             if (!body.has("descripcion") || !body.has("monto") || !body.has("fecha")) {
+                logger.error("Los campos 'descripcion', 'monto' y 'fecha' de un Gasto son obligatorios. ON registrarGasto");
                 respond("{\"error\": \"Los campos 'descripcion', 'monto' y 'fecha' son obligatorios.\"}")
                         .contentType("application/json")
                         .status(400);
@@ -135,14 +148,16 @@ public class GastosController extends AppController {
             gasto.set("fecha_carga", new java.sql.Timestamp(System.currentTimeMillis()));
 
             if (gasto.save()) {
+                logger.info("Gasto registrado: " + gasto.toString());
                 respond(gasto.toJson().toString()).contentType("application/json").status(201);
             } else {
+                logger.error(gasto.errors().toString());
                 respond("{\"error\": " + gasto.errors().toJSON() + "}")
                         .contentType("application/json")
                         .status(400);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             respond("{\"error\": \"Error interno del servidor: " + e.getMessage() + "\"}")
                     .contentType("application/json")
                     .status(500);
@@ -161,10 +176,10 @@ public class GastosController extends AppController {
             for (Gasto gasto : gastos) {
                 gastosJsonArray.put(gasto.toJson());
             }
-
+            logger.info(gastosJsonArray.toString());
             respond(gastosJsonArray.toString()).contentType("application/json").status(200);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             respond("Error al obtener los gastos: " + e.getMessage()).status(500);
         }
     }
@@ -178,10 +193,10 @@ public class GastosController extends AppController {
             for (Gasto gasto : gastos) {
                 gastosJsonArray.put(gasto.toJson());
             }
-
+            logger.info(gastosJsonArray.toString());
             respond(gastosJsonArray.toString()).contentType("application/json").status(200);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.info(e.getMessage());
             respond("{\"error\": \"Error al obtener los últimos gastos: " + e.getMessage() + "\"}")
                     .contentType("application/json")
                     .status(500);

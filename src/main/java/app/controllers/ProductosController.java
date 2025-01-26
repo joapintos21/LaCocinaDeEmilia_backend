@@ -1,14 +1,9 @@
 package app.controllers;
 
-import app.config.FirebaseConfig;
-import app.models.Adicional;
-import app.models.AdicionalProducto;
-import app.models.DescuentoProducto;
-import app.models.Producto;
-import app.services.FirebaseStorageService;
-import java.util.Base64;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
@@ -17,8 +12,17 @@ import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import app.config.FirebaseConfig;
+import app.models.Adicional;
+import app.models.AdicionalProducto;
+import app.models.DescuentoProducto;
+import app.models.Producto;
+import app.services.FirebaseStorageService;
+
 
 public class ProductosController extends AppController {
+
+    private static final Logger logger = LogManager.getLogger(ProductosController.class);
 
     @POST
     public void create() {
@@ -40,11 +44,14 @@ public class ProductosController extends AppController {
             }
 
             if (producto.saveIt()) {
+                logger.info(producto.toString());
                 respond(producto.toJson().toString()).contentType("application/json").status(201);
             } else {
+                logger.error(producto.errors().toString());
                 respond(producto.errors().toJSON()).contentType("application/json").status(400);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
@@ -79,14 +86,18 @@ public class ProductosController extends AppController {
                 }
 
                 if (producto.saveIt()) {
+                    logger.info("Actualizacion de producto: " + producto.toString());
                     respond(producto.toJson().toString()).contentType("application/json").status(200);
                 } else {
+                    logger.error("Error al actualizar producto: " + producto.errors().toString());
                     respond(producto.errors().toJSON()).contentType("application/json").status(400);
                 }
             } else {
+                logger.error("Producto no encontrado. ON UPDATE");
                 respond("{\"error\": \"Producto no encontrado\"}").contentType("application/json").status(404);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
@@ -97,6 +108,7 @@ public class ProductosController extends AppController {
         List<Producto> productos = Producto.findAll();
         JSONArray jsonArray = new JSONArray();
         productos.forEach(producto -> jsonArray.put(producto.toJson()));
+        logger.info(jsonArray.toString()); 
         respond(jsonArray.toString()).contentType("application/json").status(200);
     }
 
@@ -107,8 +119,10 @@ public class ProductosController extends AppController {
         Producto producto = Producto.findById(id);
 
         if (producto != null) {
+            logger.info(producto.toString());
             respond(producto.toJson().toString()).contentType("application/json").status(200);
         } else {
+            logger.error("Producto no encontrado. ON SHOW");
             respond("Producto no encontrado").contentType("application/json").status(404);
         }
     }
@@ -129,9 +143,10 @@ public class ProductosController extends AppController {
 
             JSONArray adicionalesJson = new JSONArray();
             adicionales.forEach(adicional -> adicionalesJson.put(adicional.toJson()));
-
+            logger.info(adicionalesJson.toString());
             respond(adicionalesJson.toString()).contentType("application/json").status(200);
         } else {
+            logger.error("Producto no encontrado. ON listarAdicionales");
             respond("{\"error\": \"Producto no encontrado\"}")
                     .contentType("application/json").status(404);
         }
@@ -142,6 +157,7 @@ public class ProductosController extends AppController {
         String query = param("query"); // Obtiene el parámetro de búsqueda
 
         if (query == null || query.isEmpty()) {
+            logger.error("El parámetro de búsqueda para Productos es requerido. ON buscar");
             respond("El parámetro de búsqueda es requerido").status(400);
             return;
         }
@@ -156,7 +172,7 @@ public class ProductosController extends AppController {
             jsonArray.put(jsonProducto);
         }
 
-        // Responde con el array JSON
+        logger.info(jsonArray.toString());
         respond(jsonArray.toString()).contentType("application/json").status(200);
     }
 
@@ -176,16 +192,20 @@ public class ProductosController extends AppController {
 
                 // Eliminar el producto de la base de datos
                 if (producto.delete()) {
+                    logger.info("Producto " + id + "eliminado correctamente.");
                     respond("{\"message\": \"Producto eliminado correctamente.\"}").contentType("application/json")
                             .status(200);
                 } else {
+                    logger.error("No se pudo eliminar el producto: " + id);
                     respond("{\"error\": \"No se pudo eliminar el producto.\"}").contentType("application/json")
                             .status(400);
                 }
             } else {
+                logger.error("Producto no encontrado. ON DELETE");
                 respond("{\"error\": \"Producto no encontrado.\"}").contentType("application/json").status(404);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
@@ -202,11 +222,14 @@ public class ProductosController extends AppController {
             descuentoProducto.set("descuento_id", descuentoId);
 
             if (descuentoProducto.saveIt()) {
+                logger.info("Descuento asociado a producto: " + descuentoProducto.toString());
                 respond(descuentoProducto.toJson().toString()).contentType("application/json").status(201);
             } else {
+                logger.error(descuentoProducto.errors().toString());
                 respond(descuentoProducto.errors().toJSON()).contentType("application/json").status(400);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
@@ -223,11 +246,14 @@ public class ProductosController extends AppController {
             adicionalProducto.set("adicional_id", adicionalId);
 
             if (adicionalProducto.saveIt()) {
+                logger.info("Adicional asociado a producto: " + adicionalProducto.toString());
                 respond(adicionalProducto.toJson().toString()).contentType("application/json").status(201);
             } else {
+                logger.error(adicionalProducto.errors().toString());
                 respond(adicionalProducto.errors().toJSON()).contentType("application/json").status(400);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }

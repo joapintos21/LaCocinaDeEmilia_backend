@@ -1,17 +1,19 @@
 package app.controllers;
 
-import app.services.ReportePDF;
-
-import org.javalite.activeweb.AppController;
-import org.javalite.activeweb.annotations.GET;
-import org.javalite.activeweb.annotations.POST;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
-import java.time.LocalDate;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.javalite.activeweb.AppController;
+import org.javalite.activeweb.annotations.GET;
+
+import app.services.ReportePDF;
 
 public class ReporteController extends AppController {
+
+    private static final Logger logger = LogManager.getLogger(ReporteController.class);
 
     @GET
     public void generarReportePedidos() {
@@ -25,12 +27,12 @@ public class ReporteController extends AppController {
             reportePDF.generarReportePDF(fechaInicio, fechaFin);
             byte[] pdfBytes = Files.readAllBytes(Paths.get("reporte.pdf"));
             String base64EncodedPdf = Base64.getEncoder().encodeToString(pdfBytes);
-
+            logger.info(reportePDF.toString());
             respond("{\"file\": \"" + base64EncodedPdf + "\"}")
                     .contentType("application/json")
                     .status(200);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error al generar el reporte: " + e.getMessage());
             respond("{\"error\": \"Error al generar el reporte: " + e.getMessage() + "\"}")
                     .contentType("application/json")
                     .status(500);
@@ -46,12 +48,12 @@ public class ReporteController extends AppController {
 
             byte[] pdfBytes = Files.readAllBytes(Paths.get("reporte_usuarios.pdf"));
             String base64EncodedPdf = Base64.getEncoder().encodeToString(pdfBytes);
-
+            logger.info(reportePDF.toString());
             respond("{\"file\": \"" + base64EncodedPdf + "\"}")
                     .contentType("application/json")
                     .status(200);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error al generar el reporte: " + e.getMessage());
             respond("{\"error\": \"Error al generar el reporte: " + e.getMessage() + "\"}")
                     .contentType("application/json")
                     .status(500);
@@ -71,12 +73,12 @@ public class ReporteController extends AppController {
 
             byte[] pdfBytes = Files.readAllBytes(Paths.get("reporte_gastos.pdf"));
             String base64EncodedPdf = Base64.getEncoder().encodeToString(pdfBytes);
-
+            logger.info(reportePDF.toString());
             respond("{\"file\": \"" + base64EncodedPdf + "\"}")
                     .contentType("application/json")
                     .status(200);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error al generar el reporte: " + e.getMessage());
             respond("{\"error\": \"Error al generar el reporte: " + e.getMessage() + "\"}")
                     .contentType("application/json")
                     .status(500);

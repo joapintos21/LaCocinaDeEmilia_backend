@@ -1,8 +1,9 @@
 package app.controllers;
 
-import app.models.Categoria;
-import app.models.Producto;
+import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
@@ -11,22 +12,26 @@ import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.List;
+import app.models.Categoria;
+import app.models.Producto;
 
 public class CategoriasController extends AppController {
-
+     private static final Logger logger = LogManager.getLogger(CategoriasController.class);
     // Crear una nueva categoría
     @POST
     public void create(Categoria categoria) {
         try {
             if (categoria.save()) {
+                logger.info(categoria.toJson().toString());
                 respond(categoria.toJson().toString()).contentType("application/json").status(200);
             } else {
                 String errorJson = "{\"error\": " + categoria.errors().toJSON() + "}";
+                logger.error(categoria.errors().toString());
                 respond(errorJson).contentType("application/json").status(400);
             }
         } catch (Exception e) {
             String errorJson = "{\"error\": \"" + e.getMessage() + "\"}";
+            logger.error(e.getMessage());
             respond(errorJson).contentType("application/json").status(500);
         }
     }
@@ -41,14 +46,18 @@ public class CategoriasController extends AppController {
             try {
                 categoria.fromMap(newCategoria.toMap());
                 if (categoria.saveIt()) {
+                    logger.info(categoria.toJson().toString());
                     respond(categoria.toJson().toString()).contentType("application/json").status(200);
                 } else {
+                    logger.error(categoria.errors().toJSON());
                     respond(categoria.errors().toJSON()).contentType("application/json").status(400);
                 }
             } catch (Exception e) {
+                logger.error(e.getMessage());
                 respond("Error al actualizar la categoría").contentType("application/json").status(500);
             }
         } else {
+            logger.error("Categoría no encontrada. ON UPDATE");
             respond("Categoría no encontrada").contentType("application/json").status(404);
         }
     }
@@ -59,6 +68,7 @@ public class CategoriasController extends AppController {
         List<Categoria> categorias = Categoria.findAll();
         JSONArray jsonArray = new JSONArray();
         categorias.forEach(categoria -> jsonArray.put(categoria.toJson()));
+        logger.info(jsonArray.toString());
         respond(jsonArray.toString()).contentType("application/json");
     }
 
@@ -69,8 +79,10 @@ public class CategoriasController extends AppController {
         Categoria categoria = Categoria.findById(id);
 
         if (categoria != null) {
+            logger.info(categoria.toJson().toString());
             respond(categoria.toJson().toString()).contentType("application/json").status(200);
         } else {
+            logger.error("Categoría no encontrada. ON SHOW");
             respond("Categoría no encontrada").contentType("application/json").status(404);
         }
     }
@@ -81,9 +93,11 @@ public class CategoriasController extends AppController {
         int id = Integer.parseInt(param("id"));
         Categoria categoria = Categoria.findById(id);
         if (categoria != null) {
+            logger.info("Categoría eliminada correctamente: " + categoria.toString());
             categoria.delete();
             respond("Categoría eliminada correctamente").status(200);
         } else {
+            logger.info("Categoría no encontrada. ON DELETE");
             respond("Categoría no encontrada").status(404);
         }
     }
@@ -112,9 +126,10 @@ public class CategoriasController extends AppController {
             JSONObject responseJson = new JSONObject();
             responseJson.put("categoria", categoria.get("titulo"));
             responseJson.put("productos", productosArray);
-
+            logger.info(responseJson.toString());
             respond(responseJson.toString()).contentType("application/json").status(200);
         } else {
+            logger.error("Categoría no encontrada. ON listarProductosCategoria");
             respond("{\"error\": \"Categoría no encontrada\"}").contentType("application/json").status(404);
         }
     }
