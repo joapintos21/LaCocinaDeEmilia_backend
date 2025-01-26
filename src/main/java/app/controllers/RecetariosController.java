@@ -1,16 +1,20 @@
 package app.controllers;
 
-import app.config.FirebaseConfig;
-import app.models.ProductosPDF;
-import app.services.FirebaseStorageService;
+import java.io.IOException;    
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.POST;
 import org.json.JSONObject;
 
-import java.io.IOException;
+import app.config.FirebaseConfig;
+import app.models.ProductosPDF;
+import app.services.FirebaseStorageService;
 
 public class RecetariosController extends AppController {
+
+    private static final Logger logger = LogManager.getLogger(RecetariosController.class);
 
     @POST
     public void subirPDF() {
@@ -33,14 +37,18 @@ public class RecetariosController extends AppController {
                 JSONObject responseJson = new JSONObject();
                 responseJson.put("producto_id", productoId);
                 responseJson.put("pdfUrl", pdfUrl);
+                logger.info(responseJson.toString());
                 respond(responseJson.toString()).contentType("application/json").status(201);
             } else {
+                logger.error("No se recibió un archivo válido. ON subirPDF");
                 respond("{\"error\": \"No se recibió un archivo válido\"}").contentType("application/json").status(400);
             }
         } catch (IOException e) {
+            logger.error("Error al inicializar Firebase: " + e.getMessage());
             respond("{\"error\": \"Error al inicializar Firebase: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }

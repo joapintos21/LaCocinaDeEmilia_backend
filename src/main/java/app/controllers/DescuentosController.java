@@ -1,26 +1,23 @@
 package app.controllers;
 
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.POST;
 import org.javalite.activeweb.annotations.PUT;
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 import app.models.Descuento;
-import app.models.DescuentoProducto;
-import app.models.Producto;
 import app.models.TipoDescuento;
 
 public class DescuentosController extends AppController {
-
+    
+    private static final Logger logger = LogManager.getLogger(DescuentosController.class);
     // Crear un nuevo descuento
     @POST
     public void create(Descuento descuento) {
@@ -31,6 +28,7 @@ public class DescuentosController extends AppController {
             TipoDescuento tipoDescuento = TipoDescuento.findFirst("id = ?", tipoNombre);
 
             if (tipoDescuento == null) {
+                logger.error("Tipo de descuento inválido. ON CREATE");
                 respond("{\"error\": \"Tipo de descuento inválido\"}").contentType("application/json").status(400);
                 return;
             }
@@ -50,14 +48,18 @@ public class DescuentosController extends AppController {
             desc.set("descripcion", descuento.get("descripcion"));
 
             if (desc.save()) {
+                logger.info(desc.toJson().toString());
                 respond(desc.toJson().toString()).contentType("application/json").status(200);
             } else {
+                logger.error(desc.errors().toString());
                 respond(desc.errors().toJSON()).contentType("application/json").status(400);
             }
         } catch (IllegalArgumentException e) {
+            logger.error("Tipo de descuento inválido. Solo se aceptan 'PORCENTAJE' o 'IMPORTE'. ON CREATE");
             respond("{\"error\": \"Tipo de descuento inválido. Solo se aceptan 'PORCENTAJE' o 'IMPORTE'.\"}")
                     .contentType("application/json").status(400);
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
@@ -66,47 +68,9 @@ public class DescuentosController extends AppController {
     @GET
     public void index() {
         List<Descuento> descuentos = Descuento.findAll();
-        List<DescuentoProducto> descuentosProductos = DescuentoProducto.findAll();
-        List<Producto> productos = Producto.findAll();
-
-        // Crear un mapeo de descuento_id a sus productos asociados
-        Map<Long, List<Producto>> descuentoProductoMap = new HashMap<>();
-        for (DescuentoProducto dp : descuentosProductos) {
-            Long descuentoId = dp.getDescuentoId(); // Asegúrate de que este método devuelve el ID correcto
-            Long productoId = dp.getProductoId();   // Asegúrate de que este método devuelve el ID correcto
-            Producto producto = productos.stream()
-                    .filter(p -> p.getId().equals(productoId))
-                    .findFirst()
-                    .orElse(null);
-            if (producto != null) { // Solo agregar si el producto existe
-                descuentoProductoMap
-                        .computeIfAbsent(descuentoId, k -> new ArrayList<>())
-                        .add(producto);
-            }
-        }
-
-        System.out.println("Mapeo de descuentos:" + descuentoProductoMap);
-
-        // Crear el JSON que asocia descuentos con sus productos
         JSONArray jsonArray = new JSONArray();
-        for (Descuento descuento : descuentos) {
-            JSONObject jsonDescuento = descuento.toJson();
-            List<Producto> productosAsociados = descuentoProductoMap.getOrDefault(descuento.getId(), new ArrayList<>());
-            JSONArray jsonProductos = new JSONArray();
-            for (Producto producto : productosAsociados) {
-                if (producto != null) {
-                    jsonProductos.put(producto.toDescuentoJson());
-                }
-            }
-            jsonDescuento.put("productos", jsonProductos);
-
-            System.out.println("Productos asociados para descuento ID " + descuento.getId() + ": " + productosAsociados);
-
-            jsonArray.put(jsonDescuento);
-        }
-
-        System.out.println("JSON final:" + jsonArray);
-
+        descuentos.forEach(descuento -> jsonArray.put(descuento.toJson()));
+        logger.info(jsonArray.toString());
         respond(jsonArray.toString()).contentType("application/json");
     }
 
@@ -116,6 +80,7 @@ public class DescuentosController extends AppController {
         List<TipoDescuento> tipoDescuentos = TipoDescuento.findAll();
         JSONArray jsonArray = new JSONArray();
         tipoDescuentos.forEach(tipoDescuento -> jsonArray.put(tipoDescuento.toJson()));
+        logger.info(jsonArray.toString());
         respond(jsonArray.toString()).contentType("application/json");
     }
 
@@ -126,8 +91,10 @@ public class DescuentosController extends AppController {
         Descuento descuento = Descuento.findById(id);
 
         if (descuento != null) {
+            logger.info(descuento.toJson().toString());
             respond(descuento.toJson().toString()).contentType("application/json").status(200);
         } else {
+            logger.error("Descuento no encontrado. ON SHOW");
             respond("{\"error\": \"Descuento no encontrado\"}").contentType("application/json").status(404);
         }
     }
@@ -145,6 +112,7 @@ public class DescuentosController extends AppController {
                 TipoDescuento tipoDescuento = TipoDescuento.findFirst("id = ?", tipoId);
 
                 if (tipoDescuento == null) {
+                    logger.error("Tipo de descuento inválido. ON UPDATE: " + descuento.toString());
                     respond("{\"error\": \"Tipo de descuento inválido\"}").contentType("application/json").status(400);
                     return;
                 }
@@ -169,14 +137,18 @@ public class DescuentosController extends AppController {
 
                 // Guardar el descuento actualizado
                 if (descuento.saveIt()) {
+                    logger.info(descuento.toJson().toString());
                     respond(descuento.toJson().toString()).contentType("application/json").status(200);
                 } else {
+                    logger.error(descuento.errors().toString());
                     respond(descuento.errors().toJSON()).contentType("application/json").status(400);
                 }
             } catch (IllegalArgumentException e) {
+                logger.error("Fechas inválidas o tipo de descuento no válido. ON UPDATE");
                 respond("{\"error\": \"Fechas inválidas o tipo de descuento no válido.\"}")
                         .contentType("application/json").status(400);
             } catch (Exception e) {
+                logger.error(e.getMessage());
                 String errorJson = "{\"error\": \"" + e.getMessage() + "\"}";
                 respond(errorJson).contentType("application/json").status(500);
             }
@@ -192,9 +164,11 @@ public class DescuentosController extends AppController {
         Descuento descuento = Descuento.findById(id);
 
         if (descuento != null) {
+            logger.info("Descuento eliminado correctamente: " + descuento.toString());
             descuento.delete();
             respond("{\"message\": \"Descuento eliminado correctamente\"}").status(200);
         } else {
+            logger.error("Descuento no encontrado. ON DELETE");
             respond("{\"error\": \"Descuento no encontrado\"}").contentType("application/json").status(404);
         }
     }

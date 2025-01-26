@@ -1,5 +1,7 @@
 package app.controllers;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.GET;
 import org.javalite.activeweb.annotations.PUT;
@@ -8,12 +10,16 @@ import app.models.Empresa;
 
 public class EmpresaController extends AppController {
 
+    private static final Logger logger = LogManager.getLogger(EmpresaController.class);
+
     @GET
     public void index() {
-        Empresa empresa = Empresa.findById(1); // Buscar la empresa con ID 1
+        Empresa empresa = Empresa.findById(1); 
         if (empresa != null) {
+            logger.info(empresa.toJson().toString());
             respond(empresa.toJson().toString()).contentType("application/json");
         } else {
+            logger.error("Empresa no encontrada. ON INDEX");
             respond("{\"error\": \"Empresa no encontrada\"}").contentType("application/json").status(404);
         }
     }
@@ -26,6 +32,7 @@ public class EmpresaController extends AppController {
             Empresa empresa = Empresa.findById(id);
 
             if (empresa == null) {
+                logger.error("Empresa no encontrada. ON UPDATE");
                 respond("{\"error\": \"Empresa no encontrada. Intente crearla primero.\"}")
                         .contentType("application/json").status(404);
                 return;
@@ -54,14 +61,17 @@ public class EmpresaController extends AppController {
             }
 
             if (empresa.save()) {
+                logger.info(empresa.toString());
                 respond(empresa.toJson().toString())
                         .contentType("application/json").status(200);
             } else {
+                logger.error(empresa.errors().toString());
                 respond("{\"error\": " + empresa.errors().toJSON() + "}")
                         .contentType("application/json")
                         .status(400);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"Error interno del servidor: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         }

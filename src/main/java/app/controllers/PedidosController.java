@@ -1,23 +1,13 @@
 package app.controllers;
 
-import app.models.Pedido;
-import app.models.PedidoDetalle;
-import app.models.Producto;
-import app.models.ProductosPDF;
-import app.models.Pack;
-import app.models.Pago;
-import app.models.Adicional;
-import app.models.Cliente;
-import app.models.Direccion;
-import app.models.Envio;
-import app.models.EstadoPedido;
-import app.models.PedidoProducto;
-import app.models.PedidoProductoAdicional;
-import app.models.PedidoHistorico;
-import app.models.PedidoPack;
-import app.models.Usuario;
-import app.services.EmailService;
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.util.Base64;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
@@ -30,25 +20,42 @@ import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.resources.payment.Payment;
 
-import java.math.BigDecimal;
-import java.util.Base64;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.sql.Date;
+import app.models.Adicional;
+import app.models.Cliente;
+import app.models.Direccion;
+import app.models.Envio;
+import app.models.EstadoPedido;
+import app.models.Pack;
+import app.models.Pago;
+import app.models.Pedido;
+import app.models.PedidoDetalle;
+import app.models.PedidoHistorico;
+import app.models.PedidoPack;
+import app.models.PedidoProducto;
+import app.models.PedidoProductoAdicional;
+import app.models.Producto;
+import app.models.ProductosPDF;
+import app.models.Usuario;
+import app.services.EmailService;
 
 public class PedidosController extends AppController {
+
+    private static final Logger logger = LogManager.getLogger(PedidosController.class);
 
     // Crear un nuevo pedido
     @POST
     public void create(Pedido pedido) {
         try {
             if (pedido.save()) {
+                logger.info("Pedido guardado: " + pedido.toString());
                 respond(pedido.toJson().toString()).contentType("application/json").status(201);
             } else {
+                logger.error(pedido.errors().toString());
                 String errorJson = "{\"error\": " + pedido.errors().toJSON() + "}";
                 respond(errorJson).contentType("application/json").status(400);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             String errorJson = "{\"error\": \"" + e.getMessage() + "\"}";
             respond(errorJson).contentType("application/json").status(500);
         }
@@ -67,11 +74,14 @@ public class PedidosController extends AppController {
 
             if (pedido.saveIt()) {
                 PedidoHistorico.registrarCambio(pedido, estadoAnterior, estadoNuevo, usuario, "Cambio de estado");
+                logger.info(pedido.toString());
                 respond(pedido.toJson().toString()).contentType("application/json").status(200);
             } else {
+                logger.error(pedido.errors().toString());
                 respond(pedido.errors().toJSON()).contentType("application/json").status(400);
             }
         } else {
+            logger.error("Pedido o usuario no encontrado. ON updateStatus");
             respond("{\"error\": \"Pedido o usuario no encontrado\"}").contentType("application/json").status(404);
         }
     }
@@ -81,6 +91,7 @@ public class PedidosController extends AppController {
         List<Pedido> pedidos = Pedido.findAll();
         JSONArray jsonArray = new JSONArray();
         pedidos.forEach(pedido -> jsonArray.put(pedido.toJson()));
+        logger.info(jsonArray.toString());
         respond(jsonArray.toString()).contentType("application/json");
     }
 
@@ -95,6 +106,7 @@ public class PedidosController extends AppController {
 
             // Validar que el userId del token coincida con el del parámetro
             if (userIdFromToken != userId) {
+                logger.error("No tienes permiso para acceder a estos pedidos. ON obtenerPedidosUsuario");
                 respond("{\"error\": \"No tienes permiso para acceder a estos pedidos.\"}")
                         .contentType("application/json")
                         .status(403);
@@ -102,6 +114,7 @@ public class PedidosController extends AppController {
             }
 
         } catch (NumberFormatException e) {
+            logger.error("El parámetro userId es inválido o no está presente. ON obtenerPedidosUsuario");
             respond("{\"error\": \"El parámetro userId es inválido o no está presente.\"}")
                     .contentType("application/json")
                     .status(400);
@@ -110,6 +123,7 @@ public class PedidosController extends AppController {
         // Obtener el cliente asociado al usuario
         Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
         if (cliente == null) {
+            logger.error("Cliente no encontrado. ON obtenerPedidosUsuario");
             respond("{\"error\": \"Cliente no encontrado.\"}")
                     .contentType("application/json")
                     .status(404);
@@ -151,7 +165,7 @@ public class PedidosController extends AppController {
             // Agregar el pedido al array de pedidos
             pedidosJson.put(pedidoJson);
         }
-        // Responde con los pedidos
+        logger.info(pedidosJson.toString());
         respond(pedidosJson.toString()).contentType("application/json").status(200);
     }
 
@@ -212,9 +226,10 @@ public class PedidosController extends AppController {
             }
             pedidoJson.put("packs", packsJsonArray);
 
-            // Enviar la respuesta JSON completa
+            logger.info(pedidoJson.toString());
             respond(pedidoJson.toString()).contentType("application/json").status(200);
         } else {
+            logger.error("Pedido no encontrado. ON SHOW");
             respond("{\"error\": \"Pedido no encontrado\"}").contentType("application/json").status(404);
         }
     }
@@ -226,9 +241,11 @@ public class PedidosController extends AppController {
         Pedido pedido = Pedido.findById(id);
 
         if (pedido != null) {
+            logger.info("Pedido eliminado correctamente: " + pedido.toString());
             pedido.delete();
             respond("{\"message\": \"Pedido eliminado correctamente\"}").contentType("application/json").status(200);
         } else {
+            logger.error("Pedido no encontrado. ON DELETE");
             respond("{\"error\": \"Pedido no encontrado\"}").contentType("application/json").status(404);
         }
     }
@@ -244,8 +261,10 @@ public class PedidosController extends AppController {
 
         if (pedido != null && producto != null) {
             pedido.addProducto(producto, cantidad);
+            logger.info("Producto agregado al pedido: " + pedido.toString());
             respond("{\"message\": \"Producto agregado al pedido\"}").contentType("application/json").status(200);
         } else {
+            logger.error("Pedido o producto no encontrado. ON addProducto");
             respond("{\"error\": \"Pedido o producto no encontrado\"}").contentType("application/json").status(404);
         }
     }
@@ -261,8 +280,10 @@ public class PedidosController extends AppController {
 
         if (pedido != null && pack != null) {
             pedido.addPack(pack, cantidad);
+            logger.info("Pack agregado al pedido: " + pedido.toString());
             respond("{\"message\": \"Pack agregado al pedido\"}").contentType("application/json").status(200);
         } else {
+            logger.error("Pedido o pack no encontrado. ON addPack");
             respond("{\"error\": \"Pedido o pack no encontrado\"}").contentType("application/json").status(404);
         }
     }
@@ -279,9 +300,11 @@ public class PedidosController extends AppController {
 
         if (pedido != null && producto != null && adicional != null) {
             pedido.addAdicionalToProducto(producto, adicional);
+            logger.info("Adicional agregado al producto en el pedido: " + pedido.toString());
             respond("{\"message\": \"Adicional agregado al producto en el pedido\"}")
                     .contentType("application/json").status(200);
         } else {
+            logger.error("Pedido, producto o adicional no encontrado. ON addAdicionalToProducto");
             respond("{\"error\": \"Pedido, producto o adicional no encontrado\"}")
                     .contentType("application/json").status(404);
         }
@@ -301,6 +324,7 @@ public class PedidosController extends AppController {
             // Buscar el pedido
             Pedido pedido = Pedido.findFirst("id = ? AND estado = ?", pedidoId, estadoEnProgreso.getId());
             if (pedido == null) {
+                logger.error("Pedido no encontrado. ON finalizarPedido");
                 respond("{\"error\": \"Pedido no encontrado\"}").contentType("application/json").status(404);
                 return;
             }
@@ -319,6 +343,7 @@ public class PedidosController extends AppController {
                 // Transferencia: Crear el pago como pendiente
                 crearPago(pedido, metodoPagoId, "PENDIENTE", pedido.getBigDecimal("total"));
                 pedido.set("estado", 2); // LISTO_PARA_PREPARAR
+                logger.info("Pedido guardado: " + pedido.toString());
                 pedido.saveIt();
 
             } else if (metodoPagoId == 2) {
@@ -371,23 +396,28 @@ public class PedidosController extends AppController {
                         }
                     } catch (NumberFormatException e) {
                         // El payment_id no es un número válido
+                        logger.error("El ID del pago no tiene un formato válido. ON finalizarPedido");
                         respond("{\"error\": \"El ID del pago no tiene un formato válido.\"}")
                                 .contentType("application/json").status(400);
                         return;
                     } catch (MPApiException e) {
                         // La API de Mercado Pago devolvió un error (por ejemplo, el ID no existe)
+                        logger.error("El ID del pago no es válido o no existe en Mercado Pago. ON finalizarPedido");
                         respond("{\"error\": \"El ID del pago no es válido o no existe en Mercado Pago.\"}")
                                 .contentType("application/json").status(404);
                         return;
                     } catch (Exception e) {
                         // Manejo genérico de errores
+                        logger.error(e.getMessage());
                         respond("{\"error\": \"Error al consultar el pago: " + e.getMessage() + "\"}")
                                 .contentType("application/json").status(500);
                         return;
                     }
                 }
+                logger.info("Pedido guardado correctamente: " + pedido.toString());
                 pedido.saveIt();
             } else {
+                logger.error("Método de pago no válido. ON finalizarPedido");
                 respond("{\"error\": \"Método de pago no válido\"}").contentType("application/json").status(400);
                 return;
             }
@@ -397,11 +427,11 @@ public class PedidosController extends AppController {
 
             // Guardar cambios en el pedido
             pedido.saveIt();
-
+            logger.info("Pedido finalizado: " + pedido.toString());
             respond(new JSONObject(pedido.toMap()).toString()).contentType("application/json").status(200);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             respond("{\"error\": \"Error al finalizar el pedido: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         }
@@ -413,6 +443,7 @@ public class PedidosController extends AppController {
         EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
 
         if (estadoEnProgreso == null) {
+            logger.error("Estado 'EN_PROGRESO' no encontrado. ON obtenerPedidoEnProgreso");
             respond("{\"error\": \"Estado 'EN_PROGRESO' no encontrado\"}")
                     .contentType("application/json").status(500);
             return;
@@ -421,6 +452,7 @@ public class PedidosController extends AppController {
         Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
 
         if (cliente == null) {
+            logger.error("Cliente no encontrado. ON obtenerPedidoEnProgreso");
             respond("{\"error\": \"Cliente no encontrado\"}")
                     .contentType("application/json").status(404);
             return;
@@ -499,9 +531,10 @@ public class PedidosController extends AppController {
             }
             pedidoJson.put("packs", packsJsonArray);
 
-            // Responder con el JSON completo
+            logger.info(pedidoJson.toString());
             respond(pedidoJson.toString()).contentType("application/json").status(200);
         } else {
+            logger.error("No hay pedidos en curso. ON obtenerPedidosEnProgreso");
             respond("{\"error\": \"No hay pedidos en curso.\"}")
                     .contentType("application/json").status(404);
         }
@@ -556,8 +589,10 @@ public class PedidosController extends AppController {
                 return pedidoJson;
             }).collect(Collectors.toList()));
 
+            logger.info(response.toString());
             respond(response.toString()).contentType("application/json").status(200);
         } catch (Exception e) {
+            logger.error("Error al obtener pedidos. ON obtenerPedidosParCocinera");
             respond("{\"error\": \"Error al obtener pedidos: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         }
@@ -572,6 +607,7 @@ public class PedidosController extends AppController {
             Usuario user = Usuario.findFirst("id = ?", userId);
 
             if (user.get("rol_id") == "0") {
+                logger.error("Cocinera no encontrada. ON reasignarPedido");
                 respond("{\"error\": \"Cocinera no encontrada\"}")
                         .contentType("application/json").status(404);
                 return;
@@ -581,24 +617,26 @@ public class PedidosController extends AppController {
             if (pedido != null) {
                 Integer estadoAnterior = pedido.getInteger("estado");
                 pedido.set("cocinera_asignada", userId);
+                logger.info("Pedido guardado: " + pedido.toString());
                 pedido.saveIt();
 
                 try {
-                    System.out.println("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
+                    logger.error("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
                     registrarCambioEnHistorial(pedidoId, estadoAnterior, estadoAnterior, userId,
                             "Pedido reasignado a nueva cocinera", new java.sql.Timestamp(System.currentTimeMillis()));
                 } catch (Exception e) {
-                    System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
-                    e.printStackTrace();
+                    logger.error("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
                 }
-
+                logger.info("Pedido reasignado exitosamente: " + pedido.toString());
                 respond("{\"message\": \"Pedido reasignado exitosamente.\"}")
                         .contentType("application/json").status(200);
             } else {
+                logger.error("Pedido no encontrado. ON reasignarPedido");
                 respond("{\"error\": \"Pedido no encontrado.\"}")
                         .contentType("application/json").status(404);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"Error al reasignar pedido: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         }
@@ -613,24 +651,26 @@ public class PedidosController extends AppController {
             if (pedido != null) {
                 Integer estadoAnterior = pedido.getInteger("estado");
                 pedido.set("estado", 3);
+                logger.info("Pedido guardado: " + pedido.toString());
                 pedido.saveIt();
 
                 try {
-                    System.out.println("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
+                    logger.error("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
                     registrarCambioEnHistorial(pedidoId, estadoAnterior, 3, pedido.getInteger("cocinera_asignada"),
                             "Pedido marcado como terminado", new java.sql.Timestamp(System.currentTimeMillis()));
                 } catch (Exception e) {
-                    System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
-                    e.printStackTrace();
+                    logger.error("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
                 }
-
+                logger.info("Pedido marcado como terminado: " + pedido.toString());
                 respond("{\"message\": \"Pedido marcado como terminado.\"}")
                         .contentType("application/json").status(200);
             } else {
+                logger.error("Pedido no encontrado. ON marcarComoTerminado");
                 respond("{\"error\": \"Pedido no encontrado.\"}")
                         .contentType("application/json").status(404);
             }
         } catch (Exception e) {
+            logger.error("Error al marcar pedido como terminado: " + e.getMessage());
             respond("{\"error\": \"Error al marcar pedido como terminado: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         }
@@ -674,9 +714,10 @@ public class PedidosController extends AppController {
                 }
                 return pedidoJson;
             }).collect(Collectors.toList()));
-
+            logger.info(response.toString());
             respond(response.toString()).contentType("application/json").status(200);
         } catch (Exception e) {
+            logger.error("Error al obtener pedidos: " + e.getMessage());
             respond("{\"error\": \"Error al obtener pedidos: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         }
@@ -692,6 +733,7 @@ public class PedidosController extends AppController {
             Usuario user = Usuario.findFirst("id = ?", userId);
 
             if (user.get("rol_id") == "0") {
+                logger.error("Cadete no encontrado. ON reasignarCadete");
                 respond("{\"error\": \"Cadete no encontrado\"}")
                         .contentType("application/json").status(404);
                 return;
@@ -702,23 +744,25 @@ public class PedidosController extends AppController {
                 Integer estadoAnterior = pedido.getInteger("estado");
                 pedido.set("cadete_asignado", userId);
                 pedido.saveIt();
+                logger.info("Pedido guardado: " + pedido.toString());
 
                 try {
-                    System.out.println("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
+                    logger.info("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
                     registrarCambioEnHistorial(pedidoId, estadoAnterior, estadoAnterior, userId,
                             "Pedido reasignado a nuevo cadete", new java.sql.Timestamp(System.currentTimeMillis()));
                 } catch (Exception e) {
-                    System.err.println("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
-                    e.printStackTrace();
+                    logger.error("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
                 }
-
+                logger.info("Pedido reasignado exitosamente: " + pedido.toString());
                 respond("{\"message\": \"Pedido reasignado exitosamente.\"}")
                         .contentType("application/json").status(200);
             } else {
+                logger.error("Pedido no encontrado. ON reasigarCadete");
                 respond("{\"error\": \"Pedido no encontrado.\"}")
                         .contentType("application/json").status(404);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             respond("{\"error\": \"Error al reasignar pedido: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         }
@@ -730,6 +774,7 @@ public class PedidosController extends AppController {
             JSONObject body = new JSONObject(getRequestString());
 
             if (!body.has("pedido_id")) {
+                logger.error("El parámetro pedido_id es requerido. ON marcarComoEntregado");
                 respond("{\"error\": \"El parámetro pedido_id es requerido.\"}")
                         .contentType("application/json").status(400);
                 return;
@@ -738,6 +783,7 @@ public class PedidosController extends AppController {
             int pedidoId = body.getInt("pedido_id");
             Pedido pedido = Pedido.findById(pedidoId);
             if (pedido == null) {
+                logger.error("Pedido no encontrado. ON marcarComoEntregado");
                 respond("{\"error\": \"Pedido no encontrado.\"}")
                         .contentType("application/json").status(404);
                 return;
@@ -746,14 +792,16 @@ public class PedidosController extends AppController {
             Integer estadoAnterior = pedido.getInteger("estado");
             pedido.set("estado", 4);
             pedido.saveIt();
+            logger.info("Pedido guardado: " + pedido.toString());
 
             Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
             if (envio != null) {
                 envio.set("entregado", true);
                 envio.set("fechaenvio", new java.sql.Timestamp(System.currentTimeMillis()));
+                logger.info("Envio guardado: " + envio.toString());
                 envio.saveIt();
             } else {
-                System.err.println("No se encontró un registro de envío para el pedido ID: " + pedidoId);
+                logger.error("No se encontró un registro de envío para el pedido ID: " + pedidoId);
             }
 
             try {
@@ -761,19 +809,17 @@ public class PedidosController extends AppController {
                     registrarCambioEnHistorial(pedidoId, estadoAnterior, 4, pedido.getInteger("cadete_asignado"),
                             "Pedido marcado como entregado", new java.sql.Timestamp(System.currentTimeMillis()));
                 } else {
-                    System.err.println("El pedido no tiene un cadete asignado.");
+                    logger.error("El pedido no tiene un cadete asignado.");
                 }
             } catch (Exception e) {
-                System.err.println("Error al registrar el cambio en el historial: " + e.getMessage());
-                e.printStackTrace();
+                logger.error("Error al registrar el cambio en el historial: " + e.getMessage());
             }
-
+            logger.info("Pedido y envío marcados como entregados: " + pedido.toString());
             respond("{\"message\": \"Pedido y envío marcados como entregados.\"}")
                     .contentType("application/json").status(200);
 
         } catch (Exception e) {
-            System.err.println("Error al marcar pedido como entregado: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error al marcar pedido como entregado: " + e.getMessage());
             respond("{\"error\": \"Error al marcar pedido como entregado: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         }
@@ -785,6 +831,7 @@ public class PedidosController extends AppController {
         pago.set("metodo_pago_id", metodoPagoId);
         pago.set("monto", monto != null ? monto : BigDecimal.ZERO);
         pago.set("estado_pago", estadoPago);
+        logger.info("Pago creado correctamente: " + pago.toString());
         pago.saveIt();
     }
 
@@ -800,13 +847,12 @@ public class PedidosController extends AppController {
             historial.set("observaciones", observaciones);
 
             if (historial.saveIt()) {
-                System.out.println("Registro en PedidoHistorico exitoso.");
+                logger.info("Registro en PedidoHistorico exitoso: " + historial.toString());
             } else {
-                System.out.println("Error al guardar en PedidoHistorico: " + historial.errors().toString());
+                logger.info("Error al guardar en PedidoHistorico: " + historial.errors().toString());
             }
         } catch (Exception e) {
-            System.err.println("Excepción al registrar en PedidoHistorico: " + e.getMessage());
-            e.printStackTrace();
+           logger.error("Excepción al registrar en PedidoHistorico: " + e.getMessage());
         }
     }
 

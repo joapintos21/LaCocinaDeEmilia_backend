@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.GET;
 import org.json.JSONArray;
@@ -16,6 +18,7 @@ import app.models.Usuario;
 
 public class DashboardController extends AppController {
 
+    private static final Logger logger = LogManager.getLogger(DashboardController.class);
     @GET
     public void index() {
         int cantUsuarios = Usuario.findAll().size();
@@ -126,6 +129,7 @@ public class DashboardController extends AppController {
         datos.put("cantUsuarios", cantUsuarios);
 
         // Responder con el JSON
+        logger.info("Data Dashboard: " + datos.toString());
         respond(datos.toString()).contentType("application/json");
     }
 

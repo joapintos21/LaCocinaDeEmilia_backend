@@ -2,6 +2,8 @@ package app.controllers;
 
 import java.math.BigDecimal;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.POST;
 
@@ -14,6 +16,9 @@ import app.models.Pago;
 import app.models.Pedido;
 
 public class HooksController extends AppController {
+
+    private static final Logger logger = LogManager.getLogger(HooksController.class);
+
     @POST
     public void handleWebhook() {
         String paymentId = param("id");
@@ -22,6 +27,7 @@ public class HooksController extends AppController {
             // Procesa el estado del pago (aprobado, pendiente, rechazado)
             processPayment(Long.parseLong(paymentId));
         }
+        logger.info("handleWebhook status OK 200");
         respond("OK").status(200);
     }
 
@@ -40,7 +46,7 @@ public class HooksController extends AppController {
             // Buscar el cliente en la tabla Cliente usando el usuario_id
             Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
             if (cliente == null) {
-                System.err.println("No se encontró un cliente para el usuario con ID: " + userId);
+                logger.error("No se encontró un cliente para el usuario con ID: " + userId);
                 return;
             }
 
@@ -49,7 +55,7 @@ public class HooksController extends AppController {
             // Buscar el pedido activo del cliente
             Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?", clienteId, 1); // Estado 1: EN_PROGRESO
             if (pedido == null) {
-                System.err.println("No se encontró un pedido EN_PROGRESO para el cliente con ID: " + clienteId);
+                logger.error("No se encontró un pedido EN_PROGRESO para el cliente con ID: " + clienteId);
                 return;
             }
 
@@ -67,12 +73,12 @@ public class HooksController extends AppController {
                 pedido.set("estado", 1);
                 status = "RECHAZADO";
             }
-            System.out.println("Pago " + status);
+            logger.info("Pago " + status);
             Envio envio = Envio.findFirst("pedido_id = ?", pedido.getId());
             comision = new BigDecimal(5.99);
             // Agregar detalles del pedido
             pedido.agregarDetallesPedido(comision, envio.getBigDecimal("costo"));
-
+            logger.info("Pedido guardado ON processPayment: " + pedido.toString());
             pedido.saveIt();
 
             // Opcional: Registrar detalles del pago en una tabla de pagos
@@ -82,11 +88,11 @@ public class HooksController extends AppController {
             pago.set("referencia", paymentId);
             pago.set("monto", transactionAmount);
             pago.set("estado_pago", status);
+            logger.info("Pago guardado: " + pago.toString());
             pago.saveIt();
 
         } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Error al procesar el pago: " + e.getMessage());
+            logger.error("Error al procesar el pago: " + e.getMessage());
         }
     }
 }

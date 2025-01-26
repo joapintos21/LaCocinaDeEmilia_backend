@@ -47,19 +47,19 @@
     <build>
         <resources>
             <resource>
-            <directory>src/main/resources</directory>
-            <filtering>true</filtering>
-            <excludes>
-                <exclude>**/*.jasper</exclude>
-            </excludes>
-        </resource>
-        <resource>
-            <directory>src/main/resources</directory>
-            <filtering>false</filtering>
-            <includes>
-                <include>**/*.jasper</include>
-            </includes>
-        </resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <excludes>
+                    <exclude>**/*.jasper</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.jasper</include>
+                </includes>
+            </resource>
         </resources>
         <plugins>
             <plugin>
@@ -156,6 +156,26 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.16</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.20.0</version> 
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.20.0</version> 
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>2.0.16</version> 
+        </dependency>
         <!--This is needed by app.Main class-->
         <dependency>
             <groupId>org.springframework</groupId>
@@ -264,6 +284,6 @@
             <artifactId>firebase-admin</artifactId>
             <version>9.2.0</version>
         </dependency>
-      </dependencies>
+    </dependencies>
 
 </project>

@@ -1,10 +1,9 @@
 package app.controllers;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import app.models.DescuentoPack;
-import app.models.Pack;
-import app.models.PackProducto;
-import app.models.PackRequest;
-import app.models.Producto;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.DELETE;
 import org.javalite.activeweb.annotations.GET;
@@ -14,11 +13,17 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.List;
-import java.util.stream.Collectors;
+
+import app.models.DescuentoPack;
+import app.models.Pack;
+import app.models.PackProducto;
+import app.models.PackRequest;
+import app.models.Producto;
 
 public class PacksController extends AppController {
     private ObjectMapper mapper = new ObjectMapper();
+
+    private static final Logger logger = LogManager.getLogger(PacksController.class);
 
     // Crear un pack con sus productos
     @POST
@@ -49,13 +54,15 @@ public class PacksController extends AppController {
                         }
                     }
                 }
-
+                logger.info(pack.toString());
                 respond(pack.toJson().toString()).contentType("application/json").status(201);
             } else {
+                logger.error(pack.errors().toString());
                 respond(pack.errors().toJSON()).contentType("application/json").status(400);
             }
         } catch (Exception e) {
             String errorJson = "{\"error\": \"" + e.getMessage() + "\"}";
+            logger.error(e.getMessage());
             respond(errorJson).contentType("application/json").status(500);
         }
     }
@@ -68,6 +75,7 @@ public class PacksController extends AppController {
             Pack pack = Pack.findById(id);
 
             if (pack == null) {
+                logger.error("Pack no encontrado. ON UPDATE");
                 respond("{\"error\": \"Pack no encontrado.\"}").contentType("application/json").status(404);
                 return;
             }
@@ -116,17 +124,20 @@ public class PacksController extends AppController {
                         } else {
                             // Si ya existe, actualizamos la cantidad
                             packProducto.set("cantidad", productoRequest.getCantidad());
+                            logger.info("Actualizacion de cantidad en Pack: " + packProducto.toString());
                             packProducto.saveIt();
                         }
                     }
                 }
-
+                logger.info("Pack actualizado: " + pack.toString());
                 respond(pack.toJson().toString()).contentType("application/json").status(200);
             } else {
+                logger.error(pack.errors().toString());
                 respond(pack.errors().toJSON()).contentType("application/json").status(400);
             }
         } catch (Exception e) {
             String errorJson = "{\"error\": \"" + e.getMessage() + "\"}";
+            logger.error(e.getMessage());
             respond(errorJson).contentType("application/json").status(500);
         }
     }
@@ -137,6 +148,7 @@ public class PacksController extends AppController {
         List<Pack> packs = Pack.findAll();
         JSONArray jsonArray = new JSONArray();
         packs.forEach(pack -> jsonArray.put(pack.toJson()));
+        logger.info(jsonArray.toString());
         respond(jsonArray.toString()).contentType("application/json");
     }
 
@@ -147,8 +159,10 @@ public class PacksController extends AppController {
         Pack pack = Pack.findById(id);
 
         if (pack != null) {
+            logger.info(pack.toString());
             respond(pack.toJson().toString()).contentType("application/json").status(200);
         } else {
+            logger.info("Pack no encontrado. ON SHOW");
             respond("Pack no encontrado").contentType("application/json").status(404);
         }
     }
@@ -159,9 +173,11 @@ public class PacksController extends AppController {
         int id = Integer.parseInt(param("id"));
         Pack pack = Pack.findById(id);
         if (pack != null) {
+            logger.info("Pack eliminado correctamente: " + pack.toString());
             pack.delete();
             respond("Pack eliminado correctamente").contentType("application/json").status(200);
         } else {
+            logger.error("Pack no encontrado. ON DELETE");
             respond("Pack no encontrado").contentType("application/json").status(404);
         }
     }
@@ -181,16 +197,18 @@ public class PacksController extends AppController {
 
             // Guardar la relación en la base de datos
             if (descuentoPack.saveIt()) {
+                logger.info("Descuento de pack creado: " + descuentoPack.toString());
                 respond(descuentoPack.toJson().toString())
                         .contentType("application/json")
                         .status(201); // Creado
             } else {
+                logger.error(descuentoPack.errors().toString());
                 respond(descuentoPack.errors().toJSON())
                         .contentType("application/json")
                         .status(400); // Error en la solicitud
             }
         } catch (Exception e) {
-            // Manejar excepciones y devolver un error genérico
+            logger.error(e.getMessage());
             respond("{\"error\": \"" + e.getMessage() + "\"}")
                     .contentType("application/json")
                     .status(500); // Error interno del servidor

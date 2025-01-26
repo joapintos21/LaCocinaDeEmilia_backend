@@ -1,5 +1,18 @@
 package app.controllers;
 
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.javalite.activeweb.AppController;
+import org.javalite.activeweb.annotations.POST;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import com.mercadopago.MercadoPagoConfig;
 import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceClient;
@@ -9,6 +22,7 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.preference.Preference;
 
+import app.models.Adicional;
 import app.models.Direccion;
 import app.models.Envio;
 import app.models.Pack;
@@ -16,22 +30,12 @@ import app.models.Pago;
 import app.models.Pedido;
 import app.models.PedidoPack;
 import app.models.PedidoProducto;
-import app.models.Producto;
 import app.models.PedidoProductoAdicional;
-import app.models.Adicional;
-
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.javalite.activeweb.AppController;
-import org.javalite.activeweb.annotations.POST;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import app.models.Producto;
 
 public class PagosController extends AppController {
+	
+private static final Logger logger = LogManager.getLogger(PagosController.class);
 
 	@POST
 	public void registrarPago() {
@@ -54,15 +58,18 @@ public class PagosController extends AppController {
 			pago.set("observaciones", observaciones);
 
 			if (pago.saveIt()) {
+				logger.info("Pago registrado exitosamente: " + pago.toString());
 				respond("{\"message\": \"Pago registrado exitosamente.\"}")
 						.contentType("application/json")
 						.status(200);
 			} else {
+				logger.error("No se pudo registrar el pago: " + pago.toString());
 				respond("{\"error\": \"No se pudo registrar el pago.\"}")
 						.contentType("application/json")
 						.status(400);
 			}
 		} catch (Exception e) {
+			logger.error(e.getMessage());
 			respond("{\"error\": \"" + e.getMessage() + "\"}")
 					.contentType("application/json")
 					.status(500);
@@ -85,6 +92,7 @@ public class PagosController extends AppController {
 			// Recupera los productos y packs asociados al pedido
 			Pedido pedido = Pedido.findById(pedidoId);
 			if (pedido == null) {
+				logger.error("Pedido no encontrado. ON crearPreferencia");
 				respond("{\"error\": \"Pedido no encontrado.\"}")
 						.contentType("application/json")
 						.status(404);
@@ -93,6 +101,7 @@ public class PagosController extends AppController {
 			Direccion d = Direccion.findFirst("id = ?", direccionId);
 
 			if (d == null) {
+				logger.error("Direccion no encontrada. ON crearPreferencia");
 				respond("{\"error\": \"Direccion no encontrada.\"}")
 						.contentType("application/json")
 						.status(404);
@@ -102,6 +111,7 @@ public class PagosController extends AppController {
 			Envio e = Envio.findFirst("pedido_id = ?", pedidoId);
 			LocalDate fechaEnvioDate = LocalDate.parse(fechaEnvio);
 			e.set("fechaEnvio", Date.valueOf(fechaEnvioDate));
+			logger.info("Envio guardado: " + e.toString());
 			e.saveIt();
 
 			double envio = d.calcularCostoEnvio();
@@ -203,14 +213,17 @@ public class PagosController extends AppController {
 			PreferenceClient client = new PreferenceClient();
 			Preference preference = client.create(request);
 			String preferenceId = preference.getId();
+			logger.info("{\"preference_id\": \"" + preferenceId + "\"}");
 			respond("{\"preference_id\": \"" + preferenceId + "\"}")
 					.contentType("application/json")
 					.status(200);
 		} catch (MPException e) {
+			logger.error(e.getMessage());
 			respond("{\"error\": \"" + e.getMessage() + "\"}")
 					.contentType("application/json")
 					.status(500);
 		} catch (MPApiException e) {
+			logger.error(e.getMessage());
 			respond("{\"error\": \"" + e.getMessage() + "\"}")
 					.contentType("application/json")
 					.status(500);

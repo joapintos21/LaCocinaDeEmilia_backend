@@ -1,5 +1,6 @@
 package app.controllers;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.POST;
 import org.json.JSONObject;
@@ -7,6 +8,8 @@ import org.json.JSONObject;
 import app.models.Usuario;
 
 public class LoginController extends AppController {
+
+    private static final Logger logger = LogManager.getLogger(LoginController.class);
 
     @POST
     public void iniciarSesion() {
@@ -22,10 +25,11 @@ public class LoginController extends AppController {
 
             // Construir el JSON de respuesta
             responseJson = "{ \"token\": \"" + token + "\", \"usuario\": " + usuario.formatoJSON() + " }";
-
+            logger.info(responseJson);
             respond(responseJson).contentType("application/json").status(200);
         } else {
-            responseJson = "{ \"error\": \"Email o contraseña incorrectos\"}";
+            responseJson = "{ \"error\": \"Email o contraseña incorrectos \"}";
+            logger.warn("Intento fallido de login. Email o contraseña incorrectos.");
             respond(responseJson).contentType("application/json").status(401);
         }
     }

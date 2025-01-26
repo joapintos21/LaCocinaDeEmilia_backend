@@ -1,18 +1,21 @@
 package app.controllers;
-
-import org.javalite.activeweb.AppController;
-import org.javalite.activeweb.annotations.GET;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.javalite.activeweb.AppController;
+import org.javalite.activeweb.annotations.GET;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class InstagramController extends AppController {
     private static final String INSTAGRAM_USER_ID = "8749086781868712";
     private static final String INSTAGRAM_ACCESS_TOKEN = "IGAB71kP60u6RBZAFAyLWg5ak55TWoyZAlNVX3RCbi1GWVN1eEt1bnlETm9vdVM5MmlLc0RDbjhJYTNjRkVqLVo1QnFXV1c4ZA0ozSG9JWUFIdmRCRmZAaY210emJudGQwaFN4cENxczdlTldobFFuZAFhPek1QbVZA2Vm5MMGtzOU9JNAZDZD\n";
+    
+    private static final Logger logger = LogManager.getLogger(InstagramController.class);
 
     @GET
     public void obtenerMedia() {
@@ -43,12 +46,13 @@ public class InstagramController extends AppController {
             JSONArray mediaData = responseJson.getJSONArray("data");
 
             // Responder con los datos al frontend
+            logger.info(mediaData.toString());
             respond(mediaData.toString())
                     .contentType("application/json")
                     .status(200);
 
         } catch (Exception e) {
-            // Manejar errores
+            logger.error(e.getMessage());
             respond("{\"error\": \"" + e.getMessage() + "\"}")
                     .contentType("application/json")
                     .status(500);
