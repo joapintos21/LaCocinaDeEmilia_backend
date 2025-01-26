@@ -13,7 +13,7 @@ CREATE TABLE aplicacion.empresa
 	WITH (OIDS = FALSE);
 	
 INSERT INTO aplicacion.empresa (nombre, direccion, descripcion_transferencia, telefono, correo)
-VALUES ('La cocina de Emilia', '', '', '098576439', 'lacocinadeemilia65@gmail.com');
+VALUES ('La cocina de Emilia', '', '', '', '');
 
 INSERT INTO gestion_usuarios.permisos
 	(
