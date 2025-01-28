@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Agregar clave SSH
+      run: |
+      mkdir -p ~/.ssh
+      echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+      chmod 600 ~/.ssh/id_ed25519
+    
     - name: Probar conexión SSH
       run: sudo ssh -i ~/.ssh/id_ed25519 root@154.12.229.92 "echo 'Conexión exitosa'"
     
