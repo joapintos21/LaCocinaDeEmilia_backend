@@ -18,10 +18,12 @@ import org.json.JSONObject;
 import app.models.Rol;
 import app.models.Usuario;
 import app.services.EmailService;
+import io.github.cdimascio.dotenv.Dotenv;
 
 public class UsuariosController extends AppController {
 
     private static final Logger logger = LogManager.getLogger(UsuariosController.class);
+    private static final Dotenv dotenv = Dotenv.load();
 
     // Crear un nuevo usuario con un rol
     @POST
@@ -43,14 +45,15 @@ public class UsuariosController extends AppController {
 
                 // Generar token de validación de cuenta
                 String token = user.generateJwtValidation();
-                String validationLink = "http://localhost:3000/verificar?token=" + token;
+                String baseUrl = dotenv.get("VALIDATION_LINK_BASE_URL");
+                String validationLink = baseUrl + "/verificar?token=" + token;
 
                 // Enviar el email de validación
                 EmailService emailService = new EmailService();
                 String contentText = String.format(
                         "<p>Hola %s,</p><p>Gracias por registrarte en nuestra aplicación. "
-                        + "Por favor, confirma tu cuenta haciendo clic en el siguiente enlace:</p>"
-                        + "<a href='%s'>Confirma tu cuenta</a><p>¡Gracias!</p>",
+                                + "Por favor, confirma tu cuenta haciendo clic en el siguiente enlace:</p>"
+                                + "<a href='%s'>Confirma tu cuenta</a><p>¡Gracias!</p>",
                         user.get("nombre"), validationLink);
 
                 emailService.sendTestEmail(
@@ -62,7 +65,7 @@ public class UsuariosController extends AppController {
                 logger.info(user.toString());
                 respond(user.formatoJSON().toString()).contentType("application/json").status(200);
             } else {
-                // En caso de error, devolver los errores de validación 
+                // En caso de error, devolver los errores de validación
                 logger.error(user.errors().toString());
                 String errorJson = "{\"error\": " + user.errors().toJSON() + "}";
                 respond(errorJson).contentType("application/json").status(400);
@@ -71,7 +74,8 @@ public class UsuariosController extends AppController {
             // Capturar y devolver el error específico si ocurre
             String errorMessage = e.getMessage();
 
-            // Opcionalmente, puedes personalizar el mensaje de error para situaciones específicas
+            // Opcionalmente, puedes personalizar el mensaje de error para situaciones
+            // específicas
             if (errorMessage.contains("usuario_email_key")) {
                 errorMessage = "El correo electrónico ya está registrado.";
             }
@@ -234,12 +238,13 @@ public class UsuariosController extends AppController {
         String resetLink = "http://localhost:3000/reset-password?token=" + token;
         String emailContent = String.format(
                 "<p>Hola %s,</p><p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>"
-                + "<a href='%s'>Restablecer Contraseña</a><p>Este enlace es válido por un tiempo limitado.</p>",
+                        + "<a href='%s'>Restablecer Contraseña</a><p>Este enlace es válido por un tiempo limitado.</p>",
                 user.get("nombre"), resetLink);
 
         EmailService emailService = new EmailService();
         emailService.sendTestEmail(email, "Recuperación de Contraseña", emailContent);
-        logger.info("Se ha enviado un correo con instrucciones para recuperar la contraseña para el usuario: " + user.toString());
+        logger.info("Se ha enviado un correo con instrucciones para recuperar la contraseña para el usuario: "
+                + user.toString());
         respond("{\"message\": \"Se ha enviado un correo con instrucciones para recuperar la contraseña.\"}")
                 .contentType("application/json")
                 .status(200);
