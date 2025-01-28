@@ -1,0 +1,8 @@
+*.log
+.vscode
+src/main/resources/database.properties
+.env
+target/
+*.lst
+*.jrxml
+activejdbc_models.properties
