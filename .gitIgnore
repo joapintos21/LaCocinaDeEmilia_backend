@@ -1,0 +1,4 @@
+target
+*.log
+.vscode
+src/main/resources/database.properties
