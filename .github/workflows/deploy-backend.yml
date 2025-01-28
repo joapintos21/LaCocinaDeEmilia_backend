@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Probar conexión SSH
-      run: sudo ssh -i /root/.ssh/id_ed25519 root@154.12.229.92 "echo 'Conexión exitosa'"
+      run: sudo ssh -i ~/.ssh/id_ed25519 root@154.12.229.92 "echo 'Conexión exitosa'"
     
     - name: Checkout code
       uses: actions/checkout@v3
@@ -20,11 +20,11 @@ jobs:
       env:
         SSH_PRIVATE_KEY: ${{ secrets.VPS_PRIVATE_KEY }}
       run: |
-        mkdir -p /root/.ssh/
-        echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_ed25519
-        chmod 600 /root/.ssh/id_ed25519
-        ssh-keyscan -H 154.12.229.92 >> /root/.ssh/known_hosts
+        mkdir -p ~/.ssh/
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan -H 154.12.229.92 >> ~/.ssh/known_hosts
 
     - name: Ejecutar script de despliegue del backend
       run: |
-        ssh -i /root/.ssh/id_ed25519 root@154.12.229.92 'bash /root/deploy-backend.sh'
+        ssh -i ~/.ssh/id_ed25519 root@154.12.229.92 'bash ~/deploy-backend.sh'
