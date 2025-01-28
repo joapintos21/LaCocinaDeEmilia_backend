@@ -21,7 +21,8 @@ public class JWTFilter extends HttpSupportFilter {
             "/productos",
             "/categorias",
             "/packs",
-            "/reporte");
+            "/reporte",
+            "/empresa");
 
     @Override
     public void before() {
