@@ -16,16 +16,24 @@ import app.models.Categoria;
 import app.models.Producto;
 
 public class CategoriasController extends AppController {
-     private static final Logger logger = LogManager.getLogger(CategoriasController.class);
+    private static final Logger logger = LogManager.getLogger(CategoriasController.class);
+
     // Crear una nueva categoría
     @POST
-    public void create(Categoria categoria) {
+    public void create() {
+        JSONObject body = new JSONObject(getRequestString());
+        String descripcion = body.getString("descripcion");
+        String titulo = body.getString("titulo");
+
+        Categoria categoria = new Categoria();
+        categoria.set("descripcion", descripcion);
+        categoria.set("titulo", titulo);
         try {
-            if (categoria.save()) {
-                logger.info(categoria.toJson().toString());
+            if (categoria.saveIt()) {
+                logger.info(categoria.toJson());
                 respond(categoria.toJson().toString()).contentType("application/json").status(200);
             } else {
-                String errorJson = "{\"error\": " + categoria.errors().toJSON() + "}";
+                String errorJson = String.format("{\"error\": %s}", categoria.errors().toJSON());
                 logger.error(categoria.errors().toString());
                 respond(errorJson).contentType("application/json").status(400);
             }
