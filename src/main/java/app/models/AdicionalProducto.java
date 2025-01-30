@@ -4,7 +4,7 @@ import org.javalite.activejdbc.Model;
 import org.javalite.activejdbc.annotations.Table;
 import org.json.JSONObject;
 
-@Table("aplicacion.producto_adicional")
+@Table("aplicacion.Producto_Adicional")
 public class AdicionalProducto extends Model {
 
     static {
