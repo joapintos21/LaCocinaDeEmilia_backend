@@ -32,20 +32,9 @@ public class Pedido extends Model {
         jsonObject.put("metodo_pago", get("metodo_pago"));
         jsonObject.put("total", get("total"));
         jsonObject.put("fechaCreacion", get("fechaCreacion"));
+        jsonObject.put("fecha_entrega", get("fecha_entrega"));
         jsonObject.put("cocinera_asignada", get("cocinera_asignada"));
         jsonObject.put("cadete_asignado", get("cadete_asignado"));
-        // // Agregar productos
-        // JSONArray productosArray = new JSONArray();
-        // List<Producto> productos = getAll(Producto.class);
-        // productos.forEach(producto -> productosArray.put(producto.toJson()));
-        // jsonObject.put("productos", productosArray);
-
-        // // Agregar packs
-        // JSONArray packsArray = new JSONArray();
-        // List<Pack> packs = getAll(Pack.class);
-        // packs.forEach(pack -> packsArray.put(pack.toJson()));
-        // jsonObject.put("packs", packsArray);
-
         return jsonObject;
     }
 
