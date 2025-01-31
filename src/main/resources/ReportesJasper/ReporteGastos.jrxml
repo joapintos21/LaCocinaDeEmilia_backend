@@ -1,5 +1,5 @@
 <!-- Created with Jaspersoft Studio version 7.0.1.final using JasperReports Library version 7.0.1-573496633c2b4074e32f433154b543003f7d2498  -->
-<jasperReport name="ReporteGastos" language="java" columnCount="1" pageWidth="800" pageHeight="1000" orientation="Landscape" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="13acf49e-4913-4d1b-bccc-113817ad15d1" summaryWithPageHeaderAndFooter="true">
+<jasperReport name="ReporteGastos" language="java" columnCount="1" pageWidth="800" pageHeight="1000" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="13acf49e-4913-4d1b-bccc-113817ad15d1" summaryWithPageHeaderAndFooter="true">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="LaCocinaDeEmilia"/>
 	<property name="com.jaspersoft.studio.unit." value="pixel"/>
@@ -59,7 +59,7 @@ ORDER BY id ASC ]]></query>
 			</element>
 		</element>
 		<element kind="frame" uuid="e3c14156-5b51-4201-918b-97fdc012e5d4" mode="Opaque" x="0" y="60" width="680" height="20" forecolor="#000000" backcolor="#99CDB6">
-			<element kind="textField" uuid="5c3301e7-a737-4c59-8a2f-a6c79fd1adb8" x="0" y="0" width="110" height="20" forecolor="#FFFFFF" fontSize="12.0" pattern="EEEEE dd MMMMM yyyy" hTextAlign="Right">
+			<element kind="textField" uuid="5c3301e7-a737-4c59-8a2f-a6c79fd1adb8" x="0" y="0" width="196" height="20" forecolor="#FFFFFF" fontSize="12.0" pattern="EEEEE dd MMMMM yyyy" hTextAlign="Left" vTextAlign="Middle">
 				<expression><![CDATA[new java.util.Date()]]></expression>
 			</element>
 		</element>
@@ -109,15 +109,15 @@ ORDER BY id ASC ]]></query>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="baab4014-c7dc-48f2-a94d-bb7e11210cc5"/>
 				</element>
 				<element kind="textField" uuid="ca89723a-da37-4571-8f24-ac4d7d083441" positionType="Float" x="320" y="0" width="164" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
-					<expression><![CDATA[$F{monto}]]></expression>
+					<expression><![CDATA["$" + $F{monto}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="dfe9222d-996b-4f14-a317-bfb39f0a06f2"/>
 				</element>
 				<element kind="textField" uuid="11f428c2-7307-4431-b828-8ab05f339445" positionType="Float" x="484" y="0" width="136" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
-					<expression><![CDATA[$F{fecha}]]></expression>
+					<expression><![CDATA[new java.text.SimpleDateFormat("dd/MM/yyyy").format($F{fecha})]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="d8018377-50e1-4559-8e17-c4bd1c2d9cfa"/>
 				</element>
 				<element kind="textField" uuid="169de2c8-ecf1-49da-bba3-08553e65c364" positionType="Float" x="620" y="0" width="140" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
-					<expression><![CDATA[$F{fecha_carga}]]></expression>
+					<expression><![CDATA[new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format($F{fecha_carga})]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="d8c2df3d-fc08-4b51-9824-0cdf6dd6ef5a"/>
 				</element>
 			</element>
@@ -128,7 +128,7 @@ ORDER BY id ASC ]]></query>
 			<pen lineWidth="0.5" lineColor="#999999"/>
 		</element>
 	</columnFooter>
-	<pageFooter height="25" splitType="Stretch">
+	<pageFooter height="31" splitType="Stretch">
 		<element kind="frame" uuid="729c3539-f946-4d0e-a0a7-bda2815ea1b0" mode="Opaque" x="0" y="1" width="760" height="24" forecolor="#D0B48E" backcolor="#99CDB6">
 			<element kind="textField" uuid="4834e99c-7f6c-485a-b098-50e5187f2ab4" x="720" y="2" width="40" height="20" forecolor="#FFFFFF" fontSize="10.0" evaluationTime="Report" bold="false" vTextAlign="Middle" style="Column header">
 				<expression><![CDATA[" " + $V{PAGE_NUMBER}]]></expression>
@@ -139,7 +139,46 @@ ORDER BY id ASC ]]></query>
 			<element kind="textField" uuid="137d38c7-1a83-4fc5-b156-9d5f1b1a0ddc" x="0" y="2" width="197" height="20" forecolor="#FFFFFF" fontSize="10.0" pattern="EEEEE dd MMMMM yyyy" bold="false" vTextAlign="Middle" style="Column header">
 				<expression><![CDATA[new java.util.Date()]]></expression>
 			</element>
+			<element kind="line" uuid="16261fbd-3b75-4733-8834-87a5dc1a8a33" positionType="FixRelativeToBottom" x="0" y="140" width="760" height="1">
+				<pen lineWidth="0.5" lineColor="#999999"/>
+			</element>
 		</element>
 	</pageFooter>
 	<summary splitType="Stretch"/>
+	<noData height="139">
+		<element kind="frame" uuid="c591d0d0-af82-4782-9908-37c61515a14c" mode="Opaque" x="0" y="0" width="680" height="60" forecolor="#99CDB6" backcolor="#FFFFFF">
+			<element kind="staticText" uuid="ddd6c310-3b66-45e0-8d96-16b05870da52" x="0" y="0" width="680" height="60" forecolor="#99CDB6" bold="false" hTextAlign="Center" style="Title">
+				<text><![CDATA[Reporte de gastos]]></text>
+			</element>
+		</element>
+		<element kind="frame" uuid="d49b2ac5-4902-4903-92f8-2b7d87b5472f" mode="Opaque" x="0" y="60" width="680" height="20" forecolor="#000000" backcolor="#99CDB6">
+			<element kind="textField" uuid="382a5531-e591-4b40-8523-0369d446d9b3" x="0" y="0" width="195" height="20" forecolor="#FFFFFF" fontSize="12.0" pattern="EEEEE dd MMMMM yyyy" hTextAlign="Left" vTextAlign="Middle">
+				<expression><![CDATA[new java.util.Date()]]></expression>
+			</element>
+		</element>
+		<element kind="image" uuid="cb2f387f-582d-4c81-974a-578c851c845a" x="680" y="0" width="80" height="80" style="Row">
+			<expression><![CDATA["C:/Users/Equipo/OneDrive/Documentos/LaCocinaDeEmilia/ReportesJasper/logo.png"]]></expression>
+			<property name="com.jaspersoft.studio.unit.width" value="px"/>
+			<box style="Row">
+				<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+			</box>
+		</element>
+		<element kind="staticText" uuid="d0b941cf-e9fc-4484-bb62-51e3a87a6021" x="0" y="80" width="760" height="29" fontSize="19.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<text><![CDATA[No hay gastos entre las fechas seleccionadas]]></text>
+		</element>
+		<element kind="frame" uuid="d492727a-bb77-4990-9143-9b5437db496e" mode="Opaque" x="0" y="115" width="760" height="24" forecolor="#D0B48E" backcolor="#99CDB6">
+			<element kind="textField" uuid="8ad08cae-9a3e-4564-8ac3-63a538ad31c9" x="720" y="2" width="40" height="20" forecolor="#FFFFFF" fontSize="10.0" evaluationTime="Report" bold="false" vTextAlign="Middle" style="Column header">
+				<expression><![CDATA[" " + $V{PAGE_NUMBER}]]></expression>
+			</element>
+			<element kind="textField" uuid="d11f09af-bc18-418d-b755-9dcd6754cec4" x="640" y="2" width="80" height="20" forecolor="#FFFFFF" fontSize="10.0" bold="false" hTextAlign="Right" vTextAlign="Middle" style="Column header">
+				<expression><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></expression>
+			</element>
+			<element kind="textField" uuid="42c06498-1a1d-4350-94a7-369a4ccd258c" x="0" y="2" width="197" height="20" forecolor="#FFFFFF" fontSize="10.0" pattern="EEEEE dd MMMMM yyyy" bold="false" vTextAlign="Middle" style="Column header">
+				<expression><![CDATA[new java.util.Date()]]></expression>
+			</element>
+		</element>
+	</noData>
 </jasperReport>

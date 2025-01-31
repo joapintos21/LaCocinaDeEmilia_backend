@@ -62,7 +62,7 @@ ORDER BY id ASC ]]></query>
 			</element>
 		</element>
 		<element kind="frame" uuid="e3c14156-5b51-4201-918b-97fdc012e5d4" mode="Opaque" x="0" y="60" width="880" height="20" forecolor="#000000" backcolor="#99CDB6">
-			<element kind="textField" uuid="5c3301e7-a737-4c59-8a2f-a6c79fd1adb8" x="0" y="0" width="110" height="20" forecolor="#FFFFFF" fontSize="12.0" pattern="EEEEE dd MMMMM yyyy" hTextAlign="Right">
+			<element kind="textField" uuid="5c3301e7-a737-4c59-8a2f-a6c79fd1adb8" x="0" y="0" width="199" height="20" forecolor="#FFFFFF" fontSize="12.0" pattern="EEEEE dd MMMMM yyyy" hTextAlign="Left" vTextAlign="Middle">
 				<expression><![CDATA[new java.util.Date()]]></expression>
 			</element>
 		</element>
@@ -79,7 +79,7 @@ ORDER BY id ASC ]]></query>
 	</title>
 	<pageHeader splitType="Stretch"/>
 	<columnHeader height="25" splitType="Stretch">
-		<element kind="staticText" uuid="f9ad0b1c-2502-49f4-aa80-6d9b7b739ec7" x="6" y="7" width="99" height="18" forecolor="#000000" bold="false" style="Column header">
+		<element kind="staticText" uuid="f9ad0b1c-2502-49f4-aa80-6d9b7b739ec7" x="0" y="7" width="105" height="18" forecolor="#000000" bold="false" style="Column header">
 			<text><![CDATA[Id]]></text>
 			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="5e9f6457-a7d7-4d91-84f8-cb9b110d91c6"/>
 		</element>
@@ -105,9 +105,9 @@ ORDER BY id ASC ]]></query>
 		</element>
 	</columnHeader>
 	<detail>
-		<band height="18" splitType="Stretch">
+		<band height="20" splitType="Stretch">
 			<element kind="frame" uuid="b50221b5-8254-440b-8c6f-1f0b138c9259" mode="Opaque" x="0" y="0" width="960" height="18" style="Row">
-				<element kind="textField" uuid="0cdb6efb-7e62-42a3-b256-3456e54e187e" positionType="Float" x="6" y="0" width="99" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
+				<element kind="textField" uuid="0cdb6efb-7e62-42a3-b256-3456e54e187e" positionType="Float" x="0" y="0" width="105" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
 					<expression><![CDATA[$F{id}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="5e9f6457-a7d7-4d91-84f8-cb9b110d91c6"/>
 				</element>
@@ -123,24 +123,20 @@ ORDER BY id ASC ]]></query>
 					<expression><![CDATA[$F{telefono}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="d8018377-50e1-4559-8e17-c4bd1c2d9cfa"/>
 				</element>
-				<element kind="textField" uuid="169de2c8-ecf1-49da-bba3-08553e65c364" positionType="Float" x="660" y="3" width="170" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
+				<element kind="textField" uuid="169de2c8-ecf1-49da-bba3-08553e65c364" positionType="Float" x="660" y="0" width="170" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
 					<expression><![CDATA[$F{rol}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="d8c2df3d-fc08-4b51-9824-0cdf6dd6ef5a"/>
 				</element>
-				<element kind="textField" uuid="74476552-7897-49ae-a5ac-912153eb1052" positionType="Float" x="830" y="3" width="130" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
+				<element kind="textField" uuid="74476552-7897-49ae-a5ac-912153eb1052" positionType="Float" x="830" y="0" width="130" height="18" fontSize="14.0" textAdjust="StretchHeight" style="Detail">
 					<expression><![CDATA[$F{status}]]></expression>
 					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="e5cbb683-9b76-4d82-9570-9151017dcbcd"/>
 				</element>
 			</element>
 		</band>
 	</detail>
-	<columnFooter height="7" splitType="Stretch">
-		<element kind="line" uuid="1133a906-5b71-476e-9f3e-bc97c97058c1" positionType="FixRelativeToBottom" x="0" y="4" width="960" height="1">
-			<pen lineWidth="0.5" lineColor="#999999"/>
-		</element>
-	</columnFooter>
-	<pageFooter height="25" splitType="Stretch">
-		<element kind="frame" uuid="729c3539-f946-4d0e-a0a7-bda2815ea1b0" mode="Opaque" x="0" y="1" width="960" height="24" forecolor="#D0B48E" backcolor="#99CDB6">
+	<columnFooter splitType="Stretch"/>
+	<pageFooter height="31" splitType="Stretch">
+		<element kind="frame" uuid="729c3539-f946-4d0e-a0a7-bda2815ea1b0" mode="Opaque" x="-11" y="3" width="960" height="24" forecolor="#D0B48E" backcolor="#99CDB6">
 			<element kind="textField" uuid="4834e99c-7f6c-485a-b098-50e5187f2ab4" x="920" y="1" width="40" height="20" forecolor="#FFFFFF" fontSize="10.0" evaluationTime="Report" bold="false" vTextAlign="Middle" style="Column header">
 				<expression><![CDATA[" " + $V{PAGE_NUMBER}]]></expression>
 			</element>
@@ -149,6 +145,9 @@ ORDER BY id ASC ]]></query>
 			</element>
 			<element kind="textField" uuid="137d38c7-1a83-4fc5-b156-9d5f1b1a0ddc" x="2" y="1" width="197" height="20" forecolor="#FFFFFF" fontSize="10.0" pattern="EEEEE dd MMMMM yyyy" bold="false" vTextAlign="Middle" style="Column header">
 				<expression><![CDATA[new java.util.Date()]]></expression>
+			</element>
+			<element kind="line" uuid="b068599c-9027-4a78-b797-c540a24b1d7e" positionType="FixRelativeToBottom" x="0" y="-3" width="960" height="1">
+				<pen lineWidth="0.5" lineColor="#999999"/>
 			</element>
 		</element>
 	</pageFooter>
