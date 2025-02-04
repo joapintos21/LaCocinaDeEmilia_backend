@@ -26,6 +26,5 @@ public class DbConfig extends AbstractDBConfig {
     public void init(AppContext context) {
 
         configFile("/database.properties");
-        // environment("production").jndi("jdbc/db_production");
     }
 }

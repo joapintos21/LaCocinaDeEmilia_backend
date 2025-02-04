@@ -1,0 +1,2 @@
+ALTER TABLE aplicacion.Pedido 
+ADD COLUMN retiro_local BOOLEAN NOT NULL DEFAULT FALSE;

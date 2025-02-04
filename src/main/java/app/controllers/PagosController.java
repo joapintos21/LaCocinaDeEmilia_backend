@@ -1,8 +1,6 @@
 package app.controllers;
 
 import java.math.BigDecimal;
-import java.sql.Date;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +22,6 @@ import com.mercadopago.resources.preference.Preference;
 
 import app.models.Adicional;
 import app.models.Direccion;
-import app.models.Envio;
 import app.models.Pack;
 import app.models.Pago;
 import app.models.Pedido;
@@ -34,8 +31,8 @@ import app.models.PedidoProductoAdicional;
 import app.models.Producto;
 
 public class PagosController extends AppController {
-	
-private static final Logger logger = LogManager.getLogger(PagosController.class);
+
+	private static final Logger logger = LogManager.getLogger(PagosController.class);
 
 	@POST
 	public void registrarPago() {
@@ -83,8 +80,8 @@ private static final Logger logger = LogManager.getLogger(PagosController.class)
 			JSONObject body = new JSONObject(getRequestString());
 			JSONObject urls = body.getJSONObject("backUrls");
 			Integer direccionId = body.getInt("direccion_id");
+			String deliveryMethod = body.getString("delivery_method");
 			int pedidoId = body.getInt("pedido_id");
-			String fechaEnvio = body.getString("fecha_envio");
 			// Agrega credenciales
 			MercadoPagoConfig
 					.setAccessToken("APP_USR-411942404565714-112820-46da2a5cc4a2a44f087cb876ffa9eb84-2125634042");
@@ -98,23 +95,21 @@ private static final Logger logger = LogManager.getLogger(PagosController.class)
 						.status(404);
 				return;
 			}
-			Direccion d = Direccion.findFirst("id = ?", direccionId);
-
-			if (d == null) {
-				logger.error("Direccion no encontrada. ON crearPreferencia");
-				respond("{\"error\": \"Direccion no encontrada.\"}")
-						.contentType("application/json")
-						.status(404);
-				return;
+			Direccion direccion = null;
+			double envio = 0;
+			if (deliveryMethod.equals("delivery")) {
+				direccion = Direccion.findById(direccionId);
+				if (direccion == null) {
+					logger.error("Direccion no encontrada. ON crearPreferencia");
+					respond("{\"error\": \"Direccion no encontrada.\"}")
+							.contentType("application/json")
+							.status(404);
+					return;
+				} else {
+					envio = direccion.calcularCostoEnvio();
+				}
 			}
-			// obtengo el envio y guardo la fecha de envio
-			Envio e = Envio.findFirst("pedido_id = ?", pedidoId);
-			LocalDate fechaEnvioDate = LocalDate.parse(fechaEnvio);
-			e.set("fechaEnvio", Date.valueOf(fechaEnvioDate));
-			logger.info("Envio guardado: " + e.toString());
-			e.saveIt();
 
-			double envio = d.calcularCostoEnvio();
 			BigDecimal costoEnvio = envio > 0 ? BigDecimal.valueOf(envio) : BigDecimal.ZERO;
 
 			List<PedidoProducto> itemsProductos = PedidoProducto.where("pedido_id = ?", pedidoId);

@@ -315,11 +315,14 @@ public class PedidosController extends AppController {
         JSONObject body = new JSONObject(getRequestString());
         int pedidoId = body.getInt("pedido_id");
         int metodoPagoId = body.getInt("metodo_pago_id");
+        int direccionId = body.getInt("direccion_id");
         String paymentId = body.getString("payment_id");
         String fechaEnvio = body.optString("fecha_envio", null);
+        String deliveryMethod = body.getString("delivery_method");
+        String notas = body.optString("notas", null);
         BigDecimal comision = BigDecimal.ZERO;
         EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
-
+        double costoEnvio = 0;
         try {
             // Buscar el pedido
             Pedido pedido = Pedido.findFirst("id = ? AND estado = ?", pedidoId, estadoEnProgreso.getId());
@@ -333,19 +336,57 @@ public class PedidosController extends AppController {
                 pedido.set("fecha_entrega", Date.valueOf(fechaEnvio));
             }
 
-            Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
-            // LocalDate fechaEnvioDate = LocalDate.parse(fechaEnvio);
-            // envio.set("fechaEnvio", Date.valueOf(fechaEnvioDate));
-            // envio.saveIt();
+            if (deliveryMethod.equals("delivery")) {
+                pedido.set("retiro_local", false);
+                Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
+                // Verificar si ya existe un envío asociado al pedido
+                Direccion direccion = Direccion.findById(direccionId);
+                costoEnvio = direccion.calcularCostoEnvio();
+
+                if (envio == null) {
+                    // Crear un nuevo envío
+                    Envio nuevoEnvio = new Envio();
+                    nuevoEnvio.set("pedido_id", pedidoId);
+                    nuevoEnvio.set("direccion_id", direccionId);
+                    nuevoEnvio.set("costo", costoEnvio);
+                    nuevoEnvio.set("entregado", false); // Nuevo envío no entregado por defecto
+                    envio = nuevoEnvio;
+                    if (!nuevoEnvio.saveIt()) {
+                        logger.info("Error al guardar el envío: " + nuevoEnvio.errors().toString());
+                        respond("{\"error\": \"Error al guardar el envío: " + nuevoEnvio.errors().toJSON()
+                                + "\"}")
+                                .contentType("application/json")
+                                .status(500);
+                        return;
+                    }
+                } else {
+                    // Actualizar el envío existente con la nueva información
+                    envio.set("direccion_id", direccionId);
+                    envio.set("costo", costoEnvio);
+                    envio.saveIt();
+                    logger.info("Envio guardado: " + envio.toString());
+                }
+
+            } else if (deliveryMethod.equals("pickup")) {
+                pedido.set("retiro_local", true);
+            } else {
+                logger.error("Método de entrega no válido. ON finalizarPedido");
+                respond("{\"error\": \"Método de entrega no válido\"}").contentType("application/json").status(400);
+                return;
+            }
+
+            if (notas != null && !notas.isEmpty()) {
+                pedido.set("notas", notas);
+            }
 
             // Verificar el método de pago
             if (metodoPagoId == 1) {
                 // Transferencia: Crear el pago como pendiente
                 crearPago(pedido, metodoPagoId, "PENDIENTE", pedido.getBigDecimal("total"));
                 pedido.set("estado", 2); // LISTO_PARA_PREPARAR
+                pedido.set("metodo_pago", metodoPagoId);
                 logger.info("Pedido guardado: " + pedido.toString());
                 pedido.saveIt();
-
             } else if (metodoPagoId == 2) {
                 // Mercado Pago: Verificar el payment_id
                 Pago pagoExistente = Pago.findFirst("pedido_id = ? AND metodo_pago_id = ?", pedidoId, 2);
@@ -354,10 +395,10 @@ public class PedidosController extends AppController {
                     try {
                         PaymentClient paymentClient = new PaymentClient();
                         Payment payment = paymentClient.get(Long.parseLong(paymentId));
-
                         String status = payment.getStatus(); // Estado del pago
                         BigDecimal transactionAmount = payment.getTransactionAmount();
                         pedido.set("total", transactionAmount);
+                        pedido.set("metodo_pago", metodoPagoId);
                         comision = new BigDecimal(5.99);
                         if ("approved".equals(status)) {
                             crearPago(pedido, metodoPagoId, "APROBADO", transactionAmount);
@@ -416,6 +457,14 @@ public class PedidosController extends AppController {
                 }
                 logger.info("Pedido guardado correctamente: " + pedido.toString());
                 pedido.saveIt();
+            } else if (metodoPagoId == 3) {
+                // Efectivo: Crear el pago como pendiente
+                crearPago(pedido, metodoPagoId, "PENDIENTE", pedido.getBigDecimal("total"));
+                pedido.set("estado", 2); // LISTO_PARA_PREPARAR
+                pedido.set("retiro_local", true);
+                pedido.set("metodo_pago", metodoPagoId);
+                logger.info("Pedido guardado: " + pedido.toString());
+                pedido.saveIt();
             } else {
                 logger.error("Método de pago no válido. ON finalizarPedido");
                 respond("{\"error\": \"Método de pago no válido\"}").contentType("application/json").status(400);
@@ -423,14 +472,16 @@ public class PedidosController extends AppController {
             }
 
             // Agregar detalles del pedido
-            pedido.agregarDetallesPedido(comision, envio.getBigDecimal("costo"));
+            pedido.agregarDetallesPedido(comision, BigDecimal.valueOf(costoEnvio));
 
             // Guardar cambios en el pedido
             pedido.saveIt();
             logger.info("Pedido finalizado: " + pedido.toString());
             respond(new JSONObject(pedido.toMap()).toString()).contentType("application/json").status(200);
 
-        } catch (Exception e) {
+        } catch (
+
+        Exception e) {
             logger.error(e.getMessage());
             respond("{\"error\": \"Error al finalizar el pedido: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
@@ -852,7 +903,7 @@ public class PedidosController extends AppController {
                 logger.info("Error al guardar en PedidoHistorico: " + historial.errors().toString());
             }
         } catch (Exception e) {
-           logger.error("Excepción al registrar en PedidoHistorico: " + e.getMessage());
+            logger.error("Excepción al registrar en PedidoHistorico: " + e.getMessage());
         }
     }
 
