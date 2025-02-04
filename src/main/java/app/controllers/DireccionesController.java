@@ -13,10 +13,9 @@ import org.json.JSONArray;
 
 import app.models.Cliente;
 import app.models.Direccion;
-import app.models.Envio;
 
 public class DireccionesController extends AppController {
-    
+
     private static final Logger logger = LogManager.getLogger(DireccionesController.class);
 
     @POST
@@ -172,7 +171,6 @@ public class DireccionesController extends AppController {
     public void calcularCostoEnvio() {
         try {
             int direccionId = Integer.parseInt(param("direccion_id"));
-            int pedidoId = Integer.parseInt(param("pedido_id"));
 
             // Buscar la dirección
             Direccion direccion = Direccion.findById(direccionId);
@@ -186,33 +184,6 @@ public class DireccionesController extends AppController {
 
             // Calcular el costo del envío
             double costoEnvio = direccion.calcularCostoEnvio();
-
-            // Verificar si ya existe un envío asociado al pedido
-            Envio envioExistente = Envio.findFirst("pedido_id = ?", pedidoId);
-
-            if (envioExistente == null) {
-                // Crear un nuevo envío
-                Envio nuevoEnvio = new Envio();
-                nuevoEnvio.set("pedido_id", pedidoId);
-                nuevoEnvio.set("direccion_id", direccionId);
-                nuevoEnvio.set("costo", costoEnvio);
-                nuevoEnvio.set("entregado", false); // Nuevo envío no entregado por defecto
-
-                if (!nuevoEnvio.saveIt()) {
-                    logger.info("Error al guardar el envío: " + nuevoEnvio.errors().toString());
-                    respond("{\"error\": \"Error al guardar el envío: " + nuevoEnvio.errors().toJSON()
-                            + "\"}")
-                            .contentType("application/json")
-                            .status(500);
-                    return;
-                }
-            } else {
-                // Actualizar el envío existente con la nueva información
-                envioExistente.set("direccion_id", direccionId);
-                envioExistente.set("costo", costoEnvio);
-                envioExistente.saveIt();
-                logger.info("Envio guardado: " + envioExistente.toString());
-            }
 
             logger.info("costoEnvio: " + costoEnvio);
             respond("{\"costoEnvio\":" + costoEnvio + "}")
