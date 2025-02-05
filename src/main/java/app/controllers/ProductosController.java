@@ -14,11 +14,10 @@ import org.json.JSONObject;
 
 import app.config.FirebaseConfig;
 import app.models.Adicional;
-import app.models.AdicionalProducto;
 import app.models.DescuentoProducto;
 import app.models.Producto;
+import app.models.ProductoAdicional;
 import app.services.FirebaseStorageService;
-
 
 public class ProductosController extends AppController {
 
@@ -108,7 +107,7 @@ public class ProductosController extends AppController {
         List<Producto> productos = Producto.findAll();
         JSONArray jsonArray = new JSONArray();
         productos.forEach(producto -> jsonArray.put(producto.toJson()));
-        logger.info(jsonArray.toString()); 
+        logger.info(jsonArray.toString());
         respond(jsonArray.toString()).contentType("application/json").status(200);
     }
 
@@ -235,13 +234,39 @@ public class ProductosController extends AppController {
     }
 
     @POST
+    public void quitarDescuento() {
+        try {
+            JSONObject body = new JSONObject(getRequestString());
+            int descuentoId = body.getInt("descuento_id");
+
+            DescuentoProducto descuentoProducto = DescuentoProducto.findFirst("descuento_id = ?", descuentoId);
+            if (descuentoProducto != null) {
+                if (descuentoProducto.delete()) {
+                    logger.info("Descuento eliminado de producto: " + descuentoProducto.toString());
+                    respond("{\"message\": \"Descuento eliminado correctamente.\"}").contentType("application/json")
+                            .status(200);
+                } else {
+                    logger.error(descuentoProducto.errors().toString());
+                    respond(descuentoProducto.errors().toJSON()).contentType("application/json").status(400);
+                }
+            } else {
+                logger.error("Descuento no encontrado. ON DELETE");
+                respond("{\"error\": \"Descuento no encontrado.\"}").contentType("application/json").status(404);
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
+        }
+    }
+
+    @POST
     public void crearAdicional() {
         try {
             JSONObject body = new JSONObject(getRequestString());
             int productoId = body.getInt("producto_id");
             int adicionalId = body.getInt("adicional_id");
 
-            AdicionalProducto adicionalProducto = new AdicionalProducto();
+            ProductoAdicional adicionalProducto = new ProductoAdicional();
             adicionalProducto.set("producto_id", productoId);
             adicionalProducto.set("adicional_id", adicionalId);
 
@@ -251,6 +276,32 @@ public class ProductosController extends AppController {
             } else {
                 logger.error(adicionalProducto.errors().toString());
                 respond(adicionalProducto.errors().toJSON()).contentType("application/json").status(400);
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
+        }
+    }
+
+    @POST
+    public void quitarAdicional() {
+        try {
+            JSONObject body = new JSONObject(getRequestString());
+            int adicionalId = body.getInt("adicional_id");
+
+            ProductoAdicional adicionalProducto = ProductoAdicional.findFirst("adicional_id = ?", adicionalId);
+            if (adicionalProducto != null) {
+                if (adicionalProducto.delete()) {
+                    logger.info("Adicional eliminado de producto: " + adicionalProducto.toString());
+                    respond("{\"message\": \"Adicional eliminado correctamente.\"}").contentType("application/json")
+                            .status(200);
+                } else {
+                    logger.error(adicionalProducto.errors().toString());
+                    respond(adicionalProducto.errors().toJSON()).contentType("application/json").status(400);
+                }
+            } else {
+                logger.error("Adicional no encontrado. ON DELETE");
+                respond("{\"error\": \"Adicional no encontrado.\"}").contentType("application/json").status(404);
             }
         } catch (Exception e) {
             logger.error(e.getMessage());
