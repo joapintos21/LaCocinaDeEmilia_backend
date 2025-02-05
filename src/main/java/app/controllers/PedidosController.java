@@ -88,11 +88,37 @@ public class PedidosController extends AppController {
 
     @GET
     public void index() {
-        List<Pedido> pedidos = Pedido.findAll();
-        JSONArray jsonArray = new JSONArray();
-        pedidos.forEach(pedido -> jsonArray.put(pedido.toJson()));
-        logger.info(jsonArray.toString());
-        respond(jsonArray.toString()).contentType("application/json");
+        try {
+            List<Pedido> pedidos = Pedido.findAll();
+           
+            JSONObject response = new JSONObject();
+            response.put("pedidos", pedidos.stream().map(pedido -> {
+                JSONObject pedidoJson = pedido.toJson();
+
+                List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
+                JSONArray detallesJson = new JSONArray();
+                for (PedidoDetalle detalle : detalles) {
+                    JSONObject detalleJson = new JSONObject();
+                    detalleJson.put("descripcion", detalle.get("descripcion"));
+                    detalleJson.put("cantidad", detalle.get("cantidad"));
+                    detalleJson.put("subtotal", detalle.get("subtotal"));
+                    detallesJson.put(detalleJson);
+                }
+                pedidoJson.put("detalles", detallesJson);
+
+                if (!pedidoJson.has("cocinera_asignada")) {
+                    pedidoJson.put("cocinera_asignada", JSONObject.NULL);
+                }
+                return pedidoJson;
+            }).collect(Collectors.toList()));
+
+            logger.info(response.toString());
+            respond(response.toString()).contentType("application/json").status(200);
+        } catch (Exception e) {
+            logger.error("Error al obtener pedidos. ON index: " + e.getMessage());
+            respond("{\"error\": \"Error al obtener pedidos: " + e.getMessage() + "\"}")
+                    .contentType("application/json").status(500);
+        }
     }
 
     @GET
@@ -470,9 +496,7 @@ public class PedidosController extends AppController {
             logger.info("Pedido finalizado: " + pedido.toString());
             respond(new JSONObject(pedido.toMap()).toString()).contentType("application/json").status(200);
 
-        } catch (
-
-        Exception e) {
+        } catch (Exception e) {
             logger.error(e.getMessage());
             respond("{\"error\": \"Error al finalizar el pedido: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
