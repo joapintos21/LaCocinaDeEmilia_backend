@@ -338,33 +338,24 @@ public class PedidosController extends AppController {
 
             if (deliveryMethod.equals("delivery")) {
                 pedido.set("retiro_local", false);
-                Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
                 // Verificar si ya existe un envío asociado al pedido
                 Direccion direccion = Direccion.findById(direccionId);
                 costoEnvio = direccion.calcularCostoEnvio();
 
-                if (envio == null) {
-                    // Crear un nuevo envío
-                    Envio nuevoEnvio = new Envio();
-                    nuevoEnvio.set("pedido_id", pedidoId);
-                    nuevoEnvio.set("direccion_id", direccionId);
-                    nuevoEnvio.set("costo", costoEnvio);
-                    nuevoEnvio.set("entregado", false); // Nuevo envío no entregado por defecto
-                    envio = nuevoEnvio;
-                    if (!nuevoEnvio.saveIt()) {
-                        logger.info("Error al guardar el envío: " + nuevoEnvio.errors().toString());
-                        respond("{\"error\": \"Error al guardar el envío: " + nuevoEnvio.errors().toJSON()
-                                + "\"}")
-                                .contentType("application/json")
-                                .status(500);
-                        return;
-                    }
-                } else {
-                    // Actualizar el envío existente con la nueva información
-                    envio.set("direccion_id", direccionId);
-                    envio.set("costo", costoEnvio);
-                    envio.saveIt();
-                    logger.info("Envio guardado: " + envio.toString());
+                // Crear un nuevo envío
+                Envio nuevoEnvio = new Envio();
+                nuevoEnvio.set("pedido_id", pedidoId);
+                nuevoEnvio.set("direccion_id", direccionId);
+                nuevoEnvio.set("costo", costoEnvio);
+                nuevoEnvio.set("entregado", false); // Nuevo envío no entregado por defecto
+
+                if (!nuevoEnvio.saveIt()) {
+                    logger.info("Error al guardar el envío: " + nuevoEnvio.errors().toString());
+                    respond("{\"error\": \"Error al guardar el envío: " + nuevoEnvio.errors().toJSON()
+                            + "\"}")
+                            .contentType("application/json")
+                            .status(500);
+                    return;
                 }
 
             } else if (deliveryMethod.equals("pickup")) {
