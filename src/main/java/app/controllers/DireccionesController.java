@@ -114,27 +114,20 @@ public class DireccionesController extends AppController {
 
     @DELETE
     public void delete() {
-        String idParam = param("id");
-        if (idParam == null || idParam.isEmpty()) {
-            logger.error("El ID es requerido para la direccion. ON DELETE");
-            respond("{\"error\": \"El ID es requerido\"}").contentType("application/json").status(400);
-            return;
-        }
+        int idParam = Integer.parseInt(param("id"));
         try {
-            int id = Integer.parseInt(idParam);
-            Direccion direccion = Direccion.findById(id);
+            Direccion direccion = Direccion.findById(idParam);
             if (direccion == null) {
                 logger.error("Dirección no encontrada. ON DELETE");
                 respond("{\"error\": \"Dirección no encontrada\"}").contentType("application/json").status(404);
                 return;
             }
-            logger.info("Dirección eliminada correctamente: " + direccion.toString());
+
             direccion.delete();
             respond("{\"message\": \"Dirección eliminada correctamente\"}").contentType("application/json").status(200);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json")
-                    .status(500);
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 
