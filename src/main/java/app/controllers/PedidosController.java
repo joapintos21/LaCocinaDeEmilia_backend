@@ -90,7 +90,7 @@ public class PedidosController extends AppController {
     public void index() {
         try {
             List<Pedido> pedidos = Pedido.findAll();
-           
+
             JSONObject response = new JSONObject();
             response.put("pedidos", pedidos.stream().map(pedido -> {
                 JSONObject pedidoJson = pedido.toJson();
@@ -418,7 +418,9 @@ public class PedidosController extends AppController {
                         pedido.set("metodo_pago", metodoPagoId);
                         comision = new BigDecimal(5.99);
                         if ("approved".equals(status)) {
-                            crearPago(pedido, metodoPagoId, "APROBADO", transactionAmount);
+                            Pago pago = crearPago(pedido, metodoPagoId, "APROBADO", transactionAmount);
+                            pago.set("referencia", paymentId);
+                            pago.saveIt();
                             pedido.set("estado", 2); // LISTO_PARA_PREPARAR
                             // Obtener el cliente asociado al pedido
                             Cliente cliente = Cliente.findById(pedido.get("cliente_id"));
@@ -891,7 +893,7 @@ public class PedidosController extends AppController {
         }
     }
 
-    private void crearPago(Pedido pedido, Integer metodoPagoId, String estadoPago, BigDecimal monto) {
+    private Pago crearPago(Pedido pedido, Integer metodoPagoId, String estadoPago, BigDecimal monto) {
         Pago pago = new Pago();
         pago.set("pedido_id", pedido.getId());
         pago.set("metodo_pago_id", metodoPagoId);
@@ -899,6 +901,7 @@ public class PedidosController extends AppController {
         pago.set("estado_pago", estadoPago);
         logger.info("Pago creado correctamente: " + pago.toString());
         pago.saveIt();
+        return pago;
     }
 
     private void registrarCambioEnHistorial(int pedidoId, Integer estadoAnterior, Integer estadoNuevo, int usuarioId,
