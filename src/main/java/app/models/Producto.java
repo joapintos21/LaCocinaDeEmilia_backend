@@ -71,11 +71,7 @@ public class Producto extends Model {
         // Obtener los descuentos asociados
         List<DescuentoProducto> descuentos = getAll(DescuentoProducto.class);
         JSONArray descuentosArray = new JSONArray();
-        for (DescuentoProducto descuento : descuentos) {
-            JSONObject descuentoJson = descuento.toJson(); // Asegúrate de que DescuentoProducto tiene un método
-            // toJson()
-            descuentosArray.put(descuentoJson);
-        }
+        getDescuentoProductoCategoria(descuentos, descuentosArray);
         jsonObject.put("descuentos", descuentosArray);
 
         // Usamos una consulta con JOIN para obtener los adicionales relacionados
@@ -100,5 +96,19 @@ public class Producto extends Model {
         jsonObject.put("visible", get("visible"));
 
         return jsonObject;
+    }
+
+    private void getDescuentoProductoCategoria(List<DescuentoProducto> descuentos, JSONArray descuentosArray) {
+        DescuentoCategoria descCat = DescuentoCategoria.findFirst("categoria_id = ?", this.get("categoria_id"));
+        if (descCat != null) {
+            JSONObject descuentoJson = descCat.toJson();
+            descuentosArray.put(descuentoJson);
+        } else {
+            for (DescuentoProducto descuento : descuentos) {
+                JSONObject descuentoJson = descuento.toJson(); // Asegúrate de que DescuentoProducto tiene un método
+                // toJson()
+                descuentosArray.put(descuentoJson);
+            }
+        }
     }
 }

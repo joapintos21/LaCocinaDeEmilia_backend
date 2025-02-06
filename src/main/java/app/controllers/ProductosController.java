@@ -237,9 +237,11 @@ public class ProductosController extends AppController {
     public void quitarDescuento() {
         try {
             JSONObject body = new JSONObject(getRequestString());
+            int productoId = body.getInt("producto_id");
             int descuentoId = body.getInt("descuento_id");
 
-            DescuentoProducto descuentoProducto = DescuentoProducto.findFirst("descuento_id = ?", descuentoId);
+            DescuentoProducto descuentoProducto = DescuentoProducto.findFirst("descuento_id = ? AND producto_id = ?",
+                    descuentoId, productoId);
             if (descuentoProducto != null) {
                 if (descuentoProducto.delete()) {
                     logger.info("Descuento eliminado de producto: " + descuentoProducto.toString());
