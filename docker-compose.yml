@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgis/postgis:15-3.3 # Imagen oficial de PostgreSQL con PostGIS
+    container_name: postgis_container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: PostgresP@ss01
+      POSTGRES_DB: lacocinadeemilia
+    ports:
+      - "5432:5432" # Expone el puerto 5432 de PostgreSQL
+    volumes:
+      - pg_data:/var/lib/postgresql/data # Volumen para persistencia de datos
+
+volumes:
+  pg_data:

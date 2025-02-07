@@ -2,11 +2,15 @@ package app.services;
 
 import net.sf.jasperreports.engine.*;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.HashMap;
 import java.util.Properties;
+
+import com.google.firebase.database.core.DatabaseConfig;
+
 import java.sql.Date;
 
 public class ReportePDF {
@@ -60,18 +64,34 @@ public class ReportePDF {
     }
 
     private Connection obtenerConexion() throws Exception {
-        Properties props = new Properties();
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("database.properties")) {
-            if (input == null) {
-                throw new RuntimeException("No se encontró el archivo database.properties");
-            }
-            props.load(input);
-        }
+        Properties props = loadProperties();
+        String prefix = System.getProperty("env", "default"); // Lee la variable de entorno para seleccionar el
+                                                              // perfil
 
-        String url = props.getProperty("production.url");
-        String user = props.getProperty("production.username");
-        String password = props.getProperty("production.password");
+        String url = props.getProperty(prefix + ".url");
+        String user = props.getProperty(prefix + ".username");
+        String password = props.getProperty(prefix + ".password");
+
+        System.out.println("URL: " + url);
+        System.out.println("Usuario: " + user);
+        System.out.println("Contraseña: " + password);
 
         return DriverManager.getConnection(url, user, password);
+    }
+
+    private Properties loadProperties() {
+        Properties props = new Properties();
+        String fileName = "database.properties";
+
+        try (InputStream input = DatabaseConfig.class.getClassLoader().getResourceAsStream(fileName)) {
+            if (input == null) {
+                throw new RuntimeException("No se pudo encontrar " + fileName);
+            }
+            props.load(input);
+        } catch (IOException ex) {
+            throw new RuntimeException("Error cargando el archivo de propiedades", ex);
+        }
+
+        return props;
     }
 }
