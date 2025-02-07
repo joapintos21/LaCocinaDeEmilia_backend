@@ -15,6 +15,7 @@ public class DescuentoCategoria extends Model {
         jsonObject.put("id", get("id"));
         jsonObject.put("categoria_id", get("categoria_id"));
         jsonObject.put("descuento_id", get("descuento_id"));
+        jsonObject.put("referencia", "categoria");
 
         // Agregar detalles del descuento asociado
         Descuento descuento = Descuento.findById(get("descuento_id"));
