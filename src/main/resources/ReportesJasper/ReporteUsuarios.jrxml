@@ -11,11 +11,11 @@
 	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
 	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
 	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
-	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50.0" bold="false"/>
-	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18.0" bold="false"/>
-	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="14.0" bold="true"/>
-	<style name="Detail" mode="Transparent" fontName="Times New Roman"/>
-	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman">
+	<style name="Title" forecolor="#FFFFFF" fontName="Sans" fontSize="50.0" bold="false"/>
+	<style name="SubTitle" forecolor="#CCCCCC" fontName="Sans" fontSize="18.0" bold="false"/>
+	<style name="Column header" forecolor="#666666" fontName="Sans" fontSize="14.0" bold="true"/>
+	<style name="Detail" mode="Transparent" fontName="Sans"/>
+	<style name="Row" mode="Transparent" fontName="Sans" pdfFontName="Sans">
 		<conditionalStyle mode="Opaque" backcolor="#F0EFEF">
 			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
 		</conditionalStyle>
@@ -67,7 +67,7 @@ ORDER BY id ASC ]]></query>
 			</element>
 		</element>
 		<element kind="image" uuid="0280a140-6c01-4afb-bcfe-b4948dcecaee" x="880" y="0" width="80" height="80" style="Row">
-			<expression><![CDATA["C:/Users/Equipo/OneDrive/Documentos/LaCocinaDeEmilia/ReportesJasper/logo.png"]]></expression>
+			<expression><![CDATA["./logo.png"]]></expression>
 			<property name="com.jaspersoft.studio.unit.width" value="px"/>
 			<box style="Row">
 				<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>

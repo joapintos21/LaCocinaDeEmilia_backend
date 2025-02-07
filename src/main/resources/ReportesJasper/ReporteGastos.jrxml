@@ -64,7 +64,7 @@ ORDER BY id ASC ]]></query>
 			</element>
 		</element>
 		<element kind="image" uuid="8977d284-d542-4493-b2e8-45972f6d9863" x="680" y="0" width="80" height="80" style="Row">
-			<expression><![CDATA["C:/Users/Equipo/OneDrive/Documentos/LaCocinaDeEmilia/ReportesJasper/logo.png"]]></expression>
+			<expression><![CDATA["./logo.png"]]></expression>
 			<property name="com.jaspersoft.studio.unit.width" value="px"/>
 			<box style="Row">
 				<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
@@ -157,7 +157,7 @@ ORDER BY id ASC ]]></query>
 			</element>
 		</element>
 		<element kind="image" uuid="cb2f387f-582d-4c81-974a-578c851c845a" x="680" y="0" width="80" height="80" style="Row">
-			<expression><![CDATA["C:/Users/Equipo/OneDrive/Documentos/LaCocinaDeEmilia/ReportesJasper/logo.png"]]></expression>
+			<expression><![CDATA["./logo.png"]]></expression>
 			<property name="com.jaspersoft.studio.unit.width" value="px"/>
 			<box style="Row">
 				<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
