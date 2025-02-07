@@ -2,11 +2,11 @@
 <jasperReport name="ReportePedidos" language="java" columnCount="1" pageWidth="1800" pageHeight="1000" whenNoDataType="NoDataSection" columnWidth="1760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="13acf49e-4913-4d1b-bccc-113817ad15d1">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="New Data Adapter"/>
-	<style name="Title" forecolor="#FFFFFF" fontName="Sans" fontSize="50.0" bold="false"/>
-	<style name="SubTitle" forecolor="#CCCCCC" fontName="Sans" fontSize="18.0" bold="false"/>
-	<style name="Column header" forecolor="#666666" fontName="Sans" fontSize="14.0" bold="true"/>
-	<style name="Detail" mode="Transparent" fontName="Sans"/>
-	<style name="Row" mode="Transparent" fontName="Sans" pdfFontName="Sans">
+	<style name="Title" forecolor="#FFFFFF" fontName="Arial" fontSize="50.0" bold="false"/>
+	<style name="SubTitle" forecolor="#CCCCCC" fontName="Arial" fontSize="18.0" bold="false"/>
+	<style name="Column header" forecolor="#666666" fontName="Arial" fontSize="14.0" bold="true"/>
+	<style name="Detail" mode="Transparent" fontName="Arial"/>
+	<style name="Row" mode="Transparent" fontName="Arial" pdfFontName="Arial">
 		<conditionalStyle mode="Opaque" backcolor="#F0EFEF">
 			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
 		</conditionalStyle>
