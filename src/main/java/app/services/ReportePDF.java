@@ -65,13 +65,13 @@ public class ReportePDF {
 
     private Connection obtenerConexion() throws Exception {
         Properties props = loadProperties();
-        String prefix = System.getProperty("env", "default"); // Lee la variable de entorno para seleccionar el
-                                                              // perfil
+        String prefix = System.getenv("ACTIVE_ENV") == null ? "development" : System.getenv("ACTIVE_ENV");
 
         String url = props.getProperty(prefix + ".url");
         String user = props.getProperty(prefix + ".username");
         String password = props.getProperty(prefix + ".password");
 
+        System.out.println("Active env: " + System.getenv("ACTIVE_ENV"));
         System.out.println("URL: " + url);
         System.out.println("Usuario: " + user);
         System.out.println("Contraseña: " + password);
