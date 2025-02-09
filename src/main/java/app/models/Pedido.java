@@ -167,7 +167,27 @@ public class Pedido extends Model {
             comisionDetalle.saveIt();
             total = total.add(com);
         }
+        // Agregar detalle para cupon, si aplica
+        CuponNutricionista cupon = CuponNutricionista.findFirst("id = ?", this.get("cupon_id"));
+        if (cupon != null) {
+            Descuento desc = Descuento.findFirst("id = ?", cupon.get("descuento_id"));
+            PedidoDetalle cuponDetalle = new PedidoDetalle();
+            BigDecimal com = total.multiply(desc.getBigDecimal("valor"));
+            cuponDetalle.set("pedido_id", this.getId());
+            cuponDetalle.set("descripcion", "Cupon: " + cupon.getString("codigo"));
+            cuponDetalle.set("cantidad", 1); // Siempre 1 para servicios como comisión
+            cuponDetalle.set("precio_unitario", com.negate());
+            cuponDetalle.set("subtotal", com.negate());
+            cuponDetalle.saveIt();
+            total = total.subtract(com);
+        }
         this.set("total", total);
+    }
+
+    // Validate if the logged-in user is the owner of the current pedido
+    public boolean isOwner(int userId) {
+        Cliente c = parent(Cliente.class);
+        return c.getInteger("usuario_id") == userId;
     }
 
 }
