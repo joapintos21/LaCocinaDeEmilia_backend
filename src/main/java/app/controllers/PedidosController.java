@@ -22,9 +22,11 @@ import com.mercadopago.resources.payment.Payment;
 
 import app.models.Adicional;
 import app.models.Cliente;
+import app.models.CuponNutricionista;
 import app.models.Direccion;
 import app.models.Envio;
 import app.models.EstadoPedido;
+import app.models.Nutricionista;
 import app.models.Pack;
 import app.models.Pago;
 import app.models.Pedido;
@@ -346,6 +348,7 @@ public class PedidosController extends AppController {
         String fechaEnvio = body.optString("fecha_envio", null);
         String deliveryMethod = body.getString("delivery_method");
         String notas = body.optString("notas", null);
+        int cuponId = body.optInt("cupon", 0);
         BigDecimal comision = BigDecimal.ZERO;
         EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
         double costoEnvio = 0;
@@ -394,6 +397,25 @@ public class PedidosController extends AppController {
 
             if (notas != null && !notas.isEmpty()) {
                 pedido.set("notas", notas);
+            }
+            if (cuponId > 0) {
+                CuponNutricionista cupon = CuponNutricionista.findById(cuponId);
+                if (cupon != null) {
+                    pedido.set("cupon_id", cupon.get("id"));
+                    // Actualizo el saldo al Nutricionista
+                    Nutricionista nutricionista = Nutricionista.findById(cupon.get("nutricionista_id"));
+                    BigDecimal saldoActual = nutricionista.getBigDecimal("saldo");
+                    saldoActual = saldoActual.add(BigDecimal.valueOf(200));
+                    nutricionista.set("saldo", saldoActual);
+                    nutricionista.saveIt();
+                } else {
+                    logger.info("Cupon inválido." + cuponId);
+                    respond("{\"error\": \"Cupon inválido: " + cuponId
+                            + "\"}")
+                            .contentType("application/json")
+                            .status(500);
+                    return;
+                }
             }
 
             // Verificar el método de pago

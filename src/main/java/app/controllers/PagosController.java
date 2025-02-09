@@ -21,6 +21,8 @@ import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.preference.Preference;
 
 import app.models.Adicional;
+import app.models.CuponNutricionista;
+import app.models.Descuento;
 import app.models.Direccion;
 import app.models.Pack;
 import app.models.Pago;
@@ -82,6 +84,7 @@ public class PagosController extends AppController {
 			Integer direccionId = body.getInt("direccion_id");
 			String deliveryMethod = body.getString("delivery_method");
 			int pedidoId = body.getInt("pedido_id");
+			int cuponId = body.optInt("cupon", 0);
 			// Agrega credenciales
 			MercadoPagoConfig
 					.setAccessToken("APP_USR-411942404565714-112820-46da2a5cc4a2a44f087cb876ffa9eb84-2125634042");
@@ -154,12 +157,25 @@ public class PagosController extends AppController {
 						.put("quantity", itemPack.getInteger("cantidad"))
 						.put("unitPrice", precioConDescuento));
 			}
-
 			// Agregar costos de envío y comisiones
 			BigDecimal porcentajeComision = BigDecimal.valueOf(0.0599);
 			subtotal = subtotal.add(costoEnvio);
 			BigDecimal comision = subtotal.multiply(porcentajeComision);
+			subtotal = subtotal.add(comision);
 			// Agregar comisiones y costos de envío como items adicionales
+			if (cuponId > 0) {
+				CuponNutricionista cupon = CuponNutricionista.findById(cuponId);
+				if (cupon != null) {
+					Descuento desc = Descuento.findFirst("id = ?", cupon.get("descuento_id"));
+					BigDecimal importeDescuento = subtotal.multiply(desc.getBigDecimal("valor"));
+					subtotal = subtotal.subtract(importeDescuento);
+					itemsArray.put(new JSONObject()
+							.put("title", "Cupon: " + cupon.getString(("codigo")))
+							.put("quantity", 1)
+							.put("unitPrice", importeDescuento.negate()));
+				}
+			}
+
 			itemsArray.put(new JSONObject()
 					.put("title", "Costo de envío")
 					.put("quantity", 1)
@@ -169,6 +185,7 @@ public class PagosController extends AppController {
 					.put("title", "Comisión por método de pago")
 					.put("quantity", 1)
 					.put("unitPrice", comision));
+
 			int counter = 0;
 			String itemId = "item-0";
 			List<PreferenceItemRequest> itemList = new ArrayList<>();

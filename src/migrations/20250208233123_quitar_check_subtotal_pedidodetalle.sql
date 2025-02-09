@@ -1,0 +1,2 @@
+ALTER TABLE aplicacion.PedidoDetalle
+DROP CONSTRAINT pedidodetalle_subtotal_check;
