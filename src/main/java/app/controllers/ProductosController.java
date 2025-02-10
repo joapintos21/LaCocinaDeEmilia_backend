@@ -29,12 +29,14 @@ public class ProductosController extends AppController {
             FirebaseConfig.initializeFirebase(); // Asegura que Firebase está inicializado
 
             JSONObject body = new JSONObject(getRequestString());
+            String titulo = body.getString("titulo");
             String descripcion = body.getString("descripcion");
             double precio = body.getDouble("precio");
             int categoriaId = body.getInt("categoria_id");
             String imageUrl = body.optString("imagen", null); // Recibimos solo la URL, no Base64
 
             Producto producto = new Producto();
+            producto.set("titulo", titulo);
             producto.set("descripcion", descripcion);
             producto.set("precio", precio);
             producto.set("categoria_id", categoriaId);
@@ -65,6 +67,9 @@ public class ProductosController extends AppController {
             Producto producto = Producto.findById(id);
 
             if (producto != null) {
+                if (body.has("titulo") && !body.getString("titulo").isEmpty()) {
+                    producto.set("titulo", body.getString("titulo"));
+                }
                 if (body.has("descripcion") && !body.getString("descripcion").isEmpty()) {
                     producto.set("descripcion", body.getString("descripcion"));
                 }
@@ -161,8 +166,10 @@ public class ProductosController extends AppController {
             return;
         }
 
-        // Realiza la búsqueda de productos por el campo "descripcion" o "titulo"
-        List<Producto> productos = Producto.where("descripcion ILIKE ?", "%" + query + "%");
+        List<Producto> productos = Producto.where(
+                "descripcion ILIKE ? OR titulo ILIKE ?",
+                "%" + query + "%",
+                "%" + query + "%");
 
         // Convierte la lista de productos a un array JSON
         JSONArray jsonArray = new JSONArray();

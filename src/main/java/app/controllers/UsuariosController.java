@@ -146,6 +146,34 @@ public class UsuariosController extends AppController {
         respond(json).contentType("application/json");
     }
 
+    // Obtener todas las cocineras (usuarios con rol_id = 2)
+    @GET
+    public void listarCocineras() {
+        List<Usuario> cocineras = Usuario.where("rol_id = ?", 2);
+        JSONArray jsonArray = new JSONArray();
+
+        cocineras.forEach(cocinera -> {
+            jsonArray.put(cocinera.formatoJSON());
+        });
+        String json = jsonArray.toString();
+        logger.info(json);
+        respond(json).contentType("application/json");
+    }
+
+    // Obtener todas las cocineras (usuarios con rol_id = 2)
+    @GET
+    public void listarCadetes() {
+        List<Usuario> cadetes = Usuario.where("rol_id = ?", 3);
+        JSONArray jsonArray = new JSONArray();
+
+        cadetes.forEach(cadete -> {
+            jsonArray.put(cadete.formatoJSON());
+        });
+        String json = jsonArray.toString();
+        logger.info(json);
+        respond(json).contentType("application/json");
+    }
+
     // Obtener todos los tipos de roles de usuarios
     @GET
     public void roles() {

@@ -91,7 +91,7 @@ public class PedidosController extends AppController {
     @GET
     public void index() {
         try {
-            List<Pedido> pedidos = Pedido.findAll();
+            List<Pedido> pedidos = Pedido.where("estado > ?", 1);
 
             JSONObject response = new JSONObject();
             response.put("pedidos", pedidos.stream().map(pedido -> {
@@ -126,9 +126,9 @@ public class PedidosController extends AppController {
     @GET
     public void obtenerPedidosUsuario() {
         int userId;
+        int rolIdFromToken = (Integer) appContext().get("rolId");
+        int userIdFromToken = (Integer) appContext().get("userId");
         try {
-            // Obtener el userId del contexto
-            int userIdFromToken = (Integer) appContext().get("userId");
             // Obtener el userId del parámetro
             userId = Integer.parseInt(param("userId"));
 
@@ -148,14 +148,17 @@ public class PedidosController extends AppController {
                     .status(400);
             return;
         }
-        // Obtener el cliente asociado al usuario
         Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
         if (cliente == null) {
-            logger.error("Cliente no encontrado. ON obtenerPedidosUsuario");
-            respond("{\"error\": \"Cliente no encontrado.\"}")
-                    .contentType("application/json")
-                    .status(404);
-            return;
+            if (rolIdFromToken == 1) {
+                Usuario user = Usuario.findFirst("email = ?", "generico@cliente.com");
+                cliente = Cliente.findFirst("usuario_id = ?", user.getId());
+            } else {
+                logger.error("Cliente no encontrado. ON agregarProductoACarrito");
+                respond("{\"error\": \"Cliente no encontrado\"}")
+                        .contentType("application/json").status(404);
+                return;
+            }
         }
 
         // Buscar los pedidos del cliente
@@ -168,6 +171,7 @@ public class PedidosController extends AppController {
             pedidoJson.put("id", pedido.getId());
             pedidoJson.put("estado", pedido.get("estado"));
             pedidoJson.put("total", pedido.get("total"));
+            pedidoJson.put("notas", pedido.get("notas"));
             pedidoJson.put("fechaCreacion", pedido.get("fechaCreacion"));
 
             // Obtener el estado de pago asociado al pedido
@@ -531,6 +535,8 @@ public class PedidosController extends AppController {
     public void obtenerPedidoEnProgreso() {
         int userId = Integer.parseInt(param("userId"));
         EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
+        int userIdFromToken = (Integer) appContext().get("userId");
+        int rolIdFromToken = (Integer) appContext().get("rolId");
 
         if (estadoEnProgreso == null) {
             logger.error("Estado 'EN_PROGRESO' no encontrado. ON obtenerPedidoEnProgreso");
@@ -538,19 +544,26 @@ public class PedidosController extends AppController {
                     .contentType("application/json").status(500);
             return;
         }
-
         Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
-
         if (cliente == null) {
-            logger.error("Cliente no encontrado. ON obtenerPedidoEnProgreso");
-            respond("{\"error\": \"Cliente no encontrado\"}")
-                    .contentType("application/json").status(404);
-            return;
+            if (rolIdFromToken == 1) {
+                Usuario user = Usuario.findFirst("email = ?", "generico@cliente.com");
+                cliente = Cliente.findFirst("usuario_id = ?", user.getId());
+            } else {
+                logger.error("Cliente no encontrado. ON agregarProductoACarrito");
+                respond("{\"error\": \"Cliente no encontrado\"}")
+                        .contentType("application/json").status(404);
+                return;
+            }
         }
-
         Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?", cliente.getId(), estadoEnProgreso.getId());
-
         if (pedido != null) {
+            if (!pedido.isOwner(userIdFromToken) && rolIdFromToken != 1) {
+                logger.error("Usuario logueado no es dueño de este pedido. ON agregarProductoACarrito");
+                respond("{\"error\": \"No tiene permisos para realizar esta accion.\"}")
+                        .contentType("application/json").status(401);
+                return;
+            }
             // Crear un objeto JSON manualmente para el pedido
             JSONObject pedidoJson = new JSONObject();
             pedidoJson.put("id", pedido.getId());
@@ -771,8 +784,10 @@ public class PedidosController extends AppController {
         try {
             Date fechaHoy = Date.valueOf(java.time.LocalDate.now());
 
-            List<Pedido> pedidosHoy = Pedido.where("fecha_entrega <= ? AND estado = ?", fechaHoy, 3);
-            List<Pedido> pedidosPosteriores = Pedido.where("fecha_entrega > ? AND estado = ?", fechaHoy, 3);
+            List<Pedido> pedidosHoy = Pedido.where("fecha_entrega <= ? AND estado = ? AND retiro_local = ?", fechaHoy,
+                    3, false);
+            List<Pedido> pedidosPosteriores = Pedido.where("fecha_entrega > ? AND estado = ? AND retiro_local = ?",
+                    fechaHoy, 3, false);
 
             JSONObject response = new JSONObject();
             response.put("pedidosHoy", pedidosHoy.stream().map(pedido -> {
@@ -782,8 +797,11 @@ public class PedidosController extends AppController {
                         "id IN (SELECT direccion_id FROM aplicacion.Envio WHERE pedido_id = ?)", pedido.getId());
                 if (direccion != null) {
                     pedidoJson.put("direccion", direccion.get("direccion"));
+                } else {
+                    PedidoDetalle pedidoDetalle = PedidoDetalle.findFirst("pedido_id = ? AND descripcion ILIKE ?",
+                            pedido.getId(), "Envío%");
+                    pedidoJson.put("direccion", pedidoDetalle.get("descripcion"));
                 }
-
                 if (!pedidoJson.has("cadete_asignado")) {
                     pedidoJson.put("cadete_asignado", JSONObject.NULL);
                 }
@@ -797,6 +815,10 @@ public class PedidosController extends AppController {
                         "id IN (SELECT direccion_id FROM aplicacion.Envio WHERE pedido_id = ?)", pedido.getId());
                 if (direccion != null) {
                     pedidoJson.put("direccion", direccion.get("direccion"));
+                } else {
+                    PedidoDetalle pedidoDetalle = PedidoDetalle.findFirst("pedido_id = ? AND descripcion ILIKE ?",
+                            pedido.getId(), "Envío%");
+                    pedidoJson.put("direccion", pedidoDetalle.get("descripcion"));
                 }
 
                 if (!pedidoJson.has("cadete_asignado")) {
@@ -914,6 +936,8 @@ public class PedidosController extends AppController {
                     .contentType("application/json").status(500);
         }
     }
+
+    // Metodos privados
 
     private Pago crearPago(Pedido pedido, Integer metodoPagoId, String estadoPago, BigDecimal monto) {
         Pago pago = new Pago();
