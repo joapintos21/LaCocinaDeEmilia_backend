@@ -14,16 +14,3 @@ CREATE TABLE aplicacion.empresa
 	
 INSERT INTO aplicacion.empresa (nombre, direccion, descripcion_transferencia, telefono, correo)
 VALUES ('La cocina de Emilia', '', '', '', '');
-
-INSERT INTO gestion_usuarios.permisos
-	(
-	endpoint
-	, tipo
-	, rol_id
-	)
-VALUES
-	(
-	'empresa'
-	, 'LECTURA'
-	, 4
-	);
