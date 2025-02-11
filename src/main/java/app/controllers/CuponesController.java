@@ -42,7 +42,7 @@ public class CuponesController extends AppController {
                 "SELECT n.id FROM gestion_usuarios.Nutricionista n " +
                         "JOIN gestion_usuarios.Cliente c ON n.cliente_id = c.id " +
                         "WHERE c.usuario_id = ?",
-                nutricionista_id).getFirst();
+                nutricionista_id).get(0);
         // Valido si existe un cuponNutricionista para nutricionista_id
         CuponNutricionista cuponExistente = CuponNutricionista.findFirst("nutricionista_id = ?", nutricionista.getId());
         if (cuponExistente != null) {
