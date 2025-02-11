@@ -22,7 +22,7 @@ public class Producto extends Model {
     }
 
     static {
-        validatePresenceOf("descripcion", "precio", "categoria_id");
+        validatePresenceOf("descripcion", "titulo", "precio", "categoria_id");
         validateNumericalityOf("precio").greaterThan(0);
     }
 
@@ -56,6 +56,7 @@ public class Producto extends Model {
     public JSONObject toJson() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", get("id"));
+        jsonObject.put("titulo", get("titulo"));
         jsonObject.put("descripcion", get("descripcion"));
         jsonObject.put("precio", get("precio"));
         jsonObject.put("visible", get("visible"));
@@ -91,6 +92,7 @@ public class Producto extends Model {
     public JSONObject toDescuentoJson() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", get("id"));
+        jsonObject.put("titulo", get("titulo"));
         jsonObject.put("descripcion", get("descripcion"));
         jsonObject.put("precio", get("precio"));
         jsonObject.put("visible", get("visible"));

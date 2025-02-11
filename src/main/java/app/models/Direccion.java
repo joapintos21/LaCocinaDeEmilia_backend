@@ -6,11 +6,13 @@ import java.sql.SQLException;
 
 import org.javalite.activejdbc.Base;
 import org.javalite.activejdbc.Model;
+import org.javalite.activejdbc.annotations.BelongsTo;
 import org.javalite.activejdbc.annotations.HasMany;
 import org.javalite.activejdbc.annotations.Table;
 import org.json.JSONObject;
 
 @Table("aplicacion.Direccion")
+@BelongsTo(parent = Cliente.class, foreignKeyName = "cliente_id")
 @HasMany(child = Envio.class, foreignKeyName = "direccion_id")
 public class Direccion extends Model {
 
@@ -65,5 +67,11 @@ public class Direccion extends Model {
         jsonObject.put("longitud", get("longitud"));
         jsonObject.put("predeterminado", get("predeterminado"));
         return jsonObject;
+    }
+
+    // Validate if the logged-in user is the owner of the current pedido
+    public boolean isOwner(int userId) {
+        Cliente c = parent(Cliente.class);
+        return c.getInteger("id") == userId;
     }
 }

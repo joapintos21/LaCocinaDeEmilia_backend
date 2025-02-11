@@ -43,22 +43,23 @@ public class PagosController extends AppController {
 
 			int pedidoId = body.getInt("pedido_id");
 			int metodoPagoId = body.getInt("metodo_pago_id");
-			String estadoPago = body.getString("estado_pago");
 			BigDecimal monto = body.getBigDecimal("monto");
 			String referencia = body.optString("referencia", null); // Campo opcional
 			String observaciones = body.optString("observaciones", null);
-
-			Pago pago = new Pago();
+			Pago pago = Pago.findFirst("pedido_id = ?", pedidoId);
+			if (pago == null) {
+				pago = new Pago();
+			}
 			pago.set("pedido_id", pedidoId);
 			pago.set("metodo_pago_id", metodoPagoId);
-			pago.set("estado_pago", estadoPago);
 			pago.set("monto", monto);
+			pago.set("estado_pago", "APROBADO");
 			pago.set("referencia", referencia);
 			pago.set("observaciones", observaciones);
 
 			if (pago.saveIt()) {
 				logger.info("Pago registrado exitosamente: " + pago.toString());
-				respond("{\"message\": \"Pago registrado exitosamente.\"}")
+				respond(pago.toJson())
 						.contentType("application/json")
 						.status(200);
 			} else {
