@@ -1,6 +1,7 @@
 INSERT INTO gestion_usuarios.permisos(endpoint, tipo, rol_id)
 VALUES
   ('permisos',    'ESCRITURA', 1),
+  ('carrito',    'ESCRITURA', 1),
   ('productos',   'ESCRITURA', 1),
   ('categorias',  'ESCRITURA', 1),
   ('usuarios',    'ESCRITURA', 1),
