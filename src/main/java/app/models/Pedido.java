@@ -31,6 +31,7 @@ public class Pedido extends Model {
         Usuario user = Usuario.findById(c.get("usuario_id"));
         jsonObject.put("cliente_id", get("cliente_id"));
         jsonObject.put("cliente_nombre", user.get("nombre"));
+        jsonObject.put("cliente_telefono", user.get("telefono"));
         jsonObject.put("estado", get("estado"));
         jsonObject.put("metodo_pago", get("metodo_pago"));
         Pago pago = Pago.findFirst("pedido_id = ?", this.getId());
@@ -44,6 +45,10 @@ public class Pedido extends Model {
         if (cocinero != null) {
             jsonObject.put("cocinera_asignada", get("cocinera_asignada"));
             jsonObject.put("cocinera_nombre", cocinero.get("nombre"));
+        }
+        Envio envio = Envio.findFirst("pedido_id = ?", this.get("id"));
+        if (envio != null) {
+            jsonObject.put("notas_cadete", envio.get("notascadete"));
         }
         jsonObject.put("cadete_asignado", get("cadete_asignado"));
         jsonObject.put("retiro_local", get("retiro_local"));

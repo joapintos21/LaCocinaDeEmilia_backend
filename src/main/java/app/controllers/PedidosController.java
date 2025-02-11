@@ -91,7 +91,7 @@ public class PedidosController extends AppController {
     @GET
     public void index() {
         try {
-            List<Pedido> pedidos = Pedido.where("estado > ?", 1);
+            List<Pedido> pedidos = Pedido.where("estado > ?", 1).orderBy("id desc").limit(50);
 
             JSONObject response = new JSONObject();
             response.put("pedidos", pedidos.stream().map(pedido -> {
@@ -262,6 +262,33 @@ public class PedidosController extends AppController {
             respond(pedidoJson.toString()).contentType("application/json").status(200);
         } else {
             logger.error("Pedido no encontrado. ON SHOW");
+            respond("{\"error\": \"Pedido no encontrado\"}").contentType("application/json").status(404);
+        }
+    }
+
+    // Eliminar un pedido
+    @POST
+    public void cancelarPedido() {
+        JSONObject body = new JSONObject(getRequestString());
+        int id = body.getInt("pedido_id");
+        int rolIdFromToken = (Integer) appContext().get("rolId");
+        Pedido pedido = Pedido.findById(id);
+
+        if (pedido != null && rolIdFromToken == 1) {
+            logger.info("Pedido cancelado correctamente: " + pedido.toString());
+            pedido.set("estado", 5);
+            Pago pago = Pago.findFirst("pedido_id = ?", id);
+            pago.set("estado_pago", "RECHAZADO");
+            pago.saveIt();
+            if (pedido.saveIt()) {
+                respond("{\"message\": \"Pedido cancelado correctamente\"}").contentType("application/json")
+                        .status(200);
+            } else {
+                logger.error("Error al cancelar pedido. ON cancelarPedido");
+                respond("{\"error\": \"Error al cancelar pedido\"}").contentType("application/json").status(404);
+            }
+        } else {
+            logger.error("Pedido no encontrado. ON cancelarPedido");
             respond("{\"error\": \"Pedido no encontrado\"}").contentType("application/json").status(404);
         }
     }
@@ -648,9 +675,33 @@ public class PedidosController extends AppController {
         try {
             Date fechaHoy = Date.valueOf(java.time.LocalDate.now());
 
-            List<Pedido> pedidosHoy = Pedido.where("fecha_entrega <= ? AND estado = ?", fechaHoy, 2);
-            List<Pedido> pedidosPosteriores = Pedido.where("fecha_entrega > ? AND estado = ?", fechaHoy, 2);
+            List<Pedido> pedidosHoy = Pedido.findBySQL(
+                    "SELECT p.* FROM aplicacion.Pedido p " +
+                            "JOIN aplicacion.Pago pa ON pa.pedido_id = p.id " +
+                            "WHERE p.fecha_entrega = ? AND p.estado = ? " +
+                            "AND (pa.metodo_pago_id IN (1, 2) AND pa.estado_pago = 'APROBADO' OR pa.metodo_pago_id = 3)",
+                    fechaHoy, 2);
 
+            List<Pedido> pedidosPosteriores = Pedido.findBySQL(
+                    "SELECT p.* FROM aplicacion.Pedido p " +
+                            "JOIN aplicacion.Pago pa ON pa.pedido_id = p.id " +
+                            "WHERE p.fecha_entrega > ? AND p.estado = ? " +
+                            "AND (pa.metodo_pago_id IN (1, 2) AND pa.estado_pago = 'APROBADO' OR pa.metodo_pago_id = 3)",
+                    fechaHoy, 2);
+
+            List<Pedido> pedidosRealizados = Pedido.findBySQL(
+                    "SELECT p.* FROM aplicacion.Pedido p " +
+                            "JOIN aplicacion.Pago pa ON pa.pedido_id = p.id " +
+                            "WHERE p.estado = ? AND p.cadete_asignado IS NULL " +
+                            "AND (pa.metodo_pago_id IN (1, 2) AND pa.estado_pago = 'APROBADO' OR pa.metodo_pago_id = 3)",
+                    3);
+
+            List<Pedido> pedidosAtrasados = Pedido.findBySQL(
+                    "SELECT p.* FROM aplicacion.Pedido p " +
+                            "JOIN aplicacion.Pago pa ON pa.pedido_id = p.id " +
+                            "WHERE p.fecha_entrega < ? AND p.estado = ? " +
+                            "AND (pa.metodo_pago_id IN (1, 2) AND pa.estado_pago = 'APROBADO' OR pa.metodo_pago_id = 3)",
+                    fechaHoy, 2);
             JSONObject response = new JSONObject();
             response.put("pedidosHoy", pedidosHoy.stream().map(pedido -> {
                 JSONObject pedidoJson = pedido.toJson();
@@ -673,6 +724,46 @@ public class PedidosController extends AppController {
             }).collect(Collectors.toList()));
 
             response.put("pedidosPosteriores", pedidosPosteriores.stream().map(pedido -> {
+                JSONObject pedidoJson = pedido.toJson();
+
+                List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
+                JSONArray detallesJson = new JSONArray();
+                for (PedidoDetalle detalle : detalles) {
+                    JSONObject detalleJson = new JSONObject();
+                    detalleJson.put("descripcion", detalle.get("descripcion"));
+                    detalleJson.put("cantidad", detalle.get("cantidad"));
+                    detalleJson.put("subtotal", detalle.get("subtotal"));
+                    detallesJson.put(detalleJson);
+                }
+                pedidoJson.put("detalles", detallesJson);
+
+                if (!pedidoJson.has("cocinera_asignada")) {
+                    pedidoJson.put("cocinera_asignada", JSONObject.NULL);
+                }
+                return pedidoJson;
+            }).collect(Collectors.toList()));
+
+            response.put("pedidosRealizados", pedidosRealizados.stream().map(pedido -> {
+                JSONObject pedidoJson = pedido.toJson();
+
+                List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
+                JSONArray detallesJson = new JSONArray();
+                for (PedidoDetalle detalle : detalles) {
+                    JSONObject detalleJson = new JSONObject();
+                    detalleJson.put("descripcion", detalle.get("descripcion"));
+                    detalleJson.put("cantidad", detalle.get("cantidad"));
+                    detalleJson.put("subtotal", detalle.get("subtotal"));
+                    detallesJson.put(detalleJson);
+                }
+                pedidoJson.put("detalles", detallesJson);
+
+                if (!pedidoJson.has("cocinera_asignada")) {
+                    pedidoJson.put("cocinera_asignada", JSONObject.NULL);
+                }
+                return pedidoJson;
+            }).collect(Collectors.toList()));
+
+            response.put("pedidosAtrasados", pedidosAtrasados.stream().map(pedido -> {
                 JSONObject pedidoJson = pedido.toJson();
 
                 List<PedidoDetalle> detalles = PedidoDetalle.where("pedido_id = ?", pedido.getId());
@@ -779,14 +870,50 @@ public class PedidosController extends AppController {
         }
     }
 
+    @PUT
+    public void devolverPedidoCocinera() {
+        try {
+            JSONObject body = new JSONObject(getRequestString());
+            int pedidoId = body.getInt("pedido_id");
+            Pedido pedido = Pedido.findById(pedidoId);
+            if (pedido != null) {
+                Integer estadoAnterior = pedido.getInteger("estado");
+                pedido.set("estado", 2);
+                logger.info("Pedido guardado: " + pedido.toString());
+                pedido.saveIt();
+
+                try {
+                    logger.error("Llamando a registrarCambioEnHistorial para el pedido: " + pedidoId);
+                    registrarCambioEnHistorial(pedidoId, estadoAnterior, 3, pedido.getInteger("cocinera_asignada"),
+                            "Pedido marcado como en preparación", new java.sql.Timestamp(System.currentTimeMillis()));
+                } catch (Exception e) {
+                    logger.error("Error al llamar a registrarCambioEnHistorial: " + e.getMessage());
+                }
+                logger.info("Pedido marcado como en preparación: " + pedido.toString());
+                respond("{\"message\": \"Pedido marcado como en preparación.\"}")
+                        .contentType("application/json").status(200);
+            } else {
+                logger.error("Pedido no encontrado. ON devolverPedidoCocinera");
+                respond("{\"error\": \"Pedido no encontrado.\"}")
+                        .contentType("application/json").status(404);
+            }
+        } catch (Exception e) {
+            logger.error("Error al marcar pedido como en preparación: " + e.getMessage());
+            respond("{\"error\": \"Error al marcar pedido como en preparación: " + e.getMessage() + "\"}")
+                    .contentType("application/json").status(500);
+        }
+    }
+
     @GET
     public void obtenerPedidosParaCadete() {
         try {
             Date fechaHoy = Date.valueOf(java.time.LocalDate.now());
 
-            List<Pedido> pedidosHoy = Pedido.where("fecha_entrega <= ? AND estado = ? AND retiro_local = ?", fechaHoy,
+            List<Pedido> pedidosHoy = Pedido.where("fecha_entrega = ? AND estado = ? AND retiro_local = ?", fechaHoy,
                     3, false);
             List<Pedido> pedidosPosteriores = Pedido.where("fecha_entrega > ? AND estado = ? AND retiro_local = ?",
+                    fechaHoy, 3, false);
+            List<Pedido> pedidosAtrasados = Pedido.where("fecha_entrega < ? AND estado = ? AND retiro_local = ?",
                     fechaHoy, 3, false);
 
             JSONObject response = new JSONObject();
@@ -826,6 +953,26 @@ public class PedidosController extends AppController {
                 }
                 return pedidoJson;
             }).collect(Collectors.toList()));
+
+            response.put("pedidosAtrasados", pedidosAtrasados.stream().map(pedido -> {
+                JSONObject pedidoJson = pedido.toJson();
+
+                Direccion direccion = Direccion.findFirst(
+                        "id IN (SELECT direccion_id FROM aplicacion.Envio WHERE pedido_id = ?)", pedido.getId());
+                if (direccion != null) {
+                    pedidoJson.put("direccion", direccion.get("direccion"));
+                } else {
+                    PedidoDetalle pedidoDetalle = PedidoDetalle.findFirst("pedido_id = ? AND descripcion ILIKE ?",
+                            pedido.getId(), "Envío%");
+                    pedidoJson.put("direccion", pedidoDetalle.get("descripcion"));
+                }
+
+                if (!pedidoJson.has("cadete_asignado")) {
+                    pedidoJson.put("cadete_asignado", JSONObject.NULL);
+                }
+                return pedidoJson;
+            }).collect(Collectors.toList()));
+
             logger.info(response.toString());
             respond(response.toString()).contentType("application/json").status(200);
         } catch (Exception e) {
@@ -933,6 +1080,37 @@ public class PedidosController extends AppController {
         } catch (Exception e) {
             logger.error("Error al marcar pedido como entregado: " + e.getMessage());
             respond("{\"error\": \"Error al marcar pedido como entregado: " + e.getMessage() + "\"}")
+                    .contentType("application/json").status(500);
+        }
+    }
+
+    @POST
+    public void agregarNotaEnvio() {
+        try {
+            JSONObject body = new JSONObject(getRequestString());
+
+            if (!body.has("pedido_id") || !body.has("notas")) {
+                logger.error("Los parametros pedido_id y notas son requeridos. ON agregarNotaEnvio");
+                respond("{\"error\": \"Los parametros pedido_id y notas son requeridos.\"}")
+                        .contentType("application/json").status(400);
+                return;
+            }
+            int pedidoId = body.getInt("pedido_id");
+            Envio envio = Envio.findFirst("pedido_id = ?", pedidoId);
+            if (envio == null) {
+                logger.error("Envio no encontrado. ON agregarNotaEnvio");
+                respond("{\"error\": \"Envio no encontrado.\"}")
+                        .contentType("application/json").status(404);
+                return;
+            }
+            envio.set("notascadete", body.getString("notas"));
+            envio.saveIt();
+            logger.info("Pedido guardado: " + envio.toString());
+            respond("{\"message\": \"Notas guardadas.\"}")
+                    .contentType("application/json").status(200);
+        } catch (Exception e) {
+            logger.error("Error al guardar las notas: " + e.getMessage());
+            respond("{\"error\": \"Error al guardar las notas: " + e.getMessage() + "\"}")
                     .contentType("application/json").status(500);
         }
     }
