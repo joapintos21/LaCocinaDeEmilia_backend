@@ -13,6 +13,7 @@ import org.json.JSONArray;
 
 import app.models.Cliente;
 import app.models.Direccion;
+import app.models.Usuario;
 
 public class DireccionesController extends AppController {
 
@@ -22,21 +23,36 @@ public class DireccionesController extends AppController {
     public void create(Direccion direccion) {
         try {
             // Validar si el cliente existe
-            int clienteId = direccion.getInteger("cliente_id");
-            Cliente c = Cliente.findFirst("usuario_id = ?", clienteId);
-            if (c == null) {
-                logger.error("El cliente " + clienteId + " no existe. ON CREATE");
-                respond("{\"error\": \"El cliente no existe\"}").contentType("application/json").status(400);
+            int userId = direccion.getInteger("cliente_id");
+            int userIdFromToken = (Integer) appContext().get("userId");
+            int rolIdFromToken = (Integer) appContext().get("rolId");
+
+            Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
+            if (cliente == null) {
+                if (rolIdFromToken == 1) {
+                    Usuario user = Usuario.findFirst("email = ?", "generico@cliente.com");
+                    cliente = Cliente.findFirst("usuario_id = ?", user.getId());
+                } else {
+                    logger.error("Cliente no encontrado. ON agregarProductoACarrito");
+                    respond("{\"error\": \"Cliente no encontrado\"}")
+                            .contentType("application/json").status(404);
+                    return;
+                }
+            }
+            if (userIdFromToken != userId && rolIdFromToken != 1) {
+                logger.error("Usuario logueado no coincide con cliente_id param. ON agregarProductoACarrito");
+                respond("{\"error\": \"No tiene permisos para realizar esta accion.\"}")
+                        .contentType("application/json").status(401);
                 return;
             }
-            direccion.set("cliente_id", c.getId());
+            direccion.set("cliente_id", cliente.getId());
 
             // Verificar si esta dirección es predeterminada
             Boolean esPredeterminada = direccion.getBoolean("predeterminado");
             if (esPredeterminada != null && esPredeterminada) {
                 // Buscar y desmarcar la dirección predeterminada existente, si la hay
                 Direccion predeterminadaActual = Direccion.findFirst("cliente_id = ? AND predeterminado = true",
-                        c.getId());
+                        cliente.getId());
                 if (predeterminadaActual != null) {
                     predeterminadaActual.set("predeterminado", false).saveIt();
                 }
@@ -90,16 +106,23 @@ public class DireccionesController extends AppController {
 
     @GET
     public void index() {
-        String clienteIdParam = param("cliente_id");
-        if (clienteIdParam == null || clienteIdParam.isEmpty()) {
-            logger.error("El cliente_id es requerido para la direccion. ON INDEX");
-            respond("{\"error\": \"cliente_id es requerido\"}").contentType("application/json").status(400);
-            return;
+        int clienteId = Integer.parseInt(param("cliente_id"));
+        int rolIdFromToken = (Integer) appContext().get("rolId");
+
+        Cliente cliente = Cliente.findFirst("usuario_id = ?", clienteId);
+        if (cliente == null) {
+            if (rolIdFromToken == 1) {
+                Usuario user = Usuario.findFirst("email = ?", "generico@cliente.com");
+                cliente = Cliente.findFirst("usuario_id = ?", user.getId());
+            } else {
+                logger.error("Cliente no encontrado. ON agregarProductoACarrito");
+                respond("{\"error\": \"Cliente no encontrado\"}")
+                        .contentType("application/json").status(404);
+                return;
+            }
         }
         try {
-            int clienteId = Integer.parseInt(clienteIdParam);
-            Cliente c = Cliente.findFirst("usuario_id = ?", clienteId);
-            List<Direccion> direcciones = Direccion.where("cliente_id = ?", c.getId());
+            List<Direccion> direcciones = Direccion.where("cliente_id = ?", cliente.getId());
             JSONArray jsonArray = new JSONArray();
             direcciones.forEach(direccion -> jsonArray.put(direccion.toJson()));
             logger.info(jsonArray.toString());
@@ -126,7 +149,8 @@ public class DireccionesController extends AppController {
             respond("{\"message\": \"Dirección eliminada correctamente\"}").contentType("application/json").status(200);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json").status(500);
+            respond("{\"error\": \"Error inesperado: " + e.getMessage() + "\"}").contentType("application/json")
+                    .status(500);
         }
     }
 

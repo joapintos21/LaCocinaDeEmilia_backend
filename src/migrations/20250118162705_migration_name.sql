@@ -5,6 +5,3 @@ CREATE TABLE aplicacion.Gastos (
     fecha DATE NOT NULL,                
     fecha_carga TIMESTAMP DEFAULT NOW()
 );
-
-INSERT INTO gestion_usuarios.permisos (endpoint, tipo, rol_id) 
-VALUES ('gastos', 'ESCRITURA', 1);

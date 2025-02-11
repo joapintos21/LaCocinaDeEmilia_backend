@@ -2,7 +2,6 @@ package app.controllers;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.io.IOException;
@@ -12,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.javalite.activeweb.AppController;
 import org.javalite.activeweb.annotations.GET;
 
-import app.services.ReportePDF;
+import app.services.ReporteService;
 
 public class ReporteController extends AppController {
 
@@ -34,21 +33,23 @@ public class ReporteController extends AppController {
     public void generarReportePedidos() {
         String fechaInicio = param("fechaInicio");
         String fechaFin = param("fechaFin");
-        String filePath = "reporte.pdf";
+        String formato = param("formato") != null ? param("formato").trim().toLowerCase() : "pdf";
+        String tipo = "pedidos";
+        String extension = "excel".equals(formato) || "xlsx".equals(formato) ? "xlsx" : "pdf";
+        String filePath = "reporte_" + tipo + "." + extension;
 
-        System.out.println("Generando reporte de pedidos desde " + fechaInicio + " hasta " + fechaFin);
+        System.out.println("Generando reporte de pedidos en formato " + formato.toUpperCase());
 
         try {
-            ReportePDF reportePDF = new ReportePDF();
-            reportePDF.generarReportePDF(fechaInicio, fechaFin);
+            ReporteService reporteService = new ReporteService();
+            reporteService.generarReportePedidos(fechaInicio, fechaFin, formato);
 
-            byte[] pdfBytes = Files.readAllBytes(Paths.get("reporte.pdf"));
-            String base64EncodedPdf = Base64.getEncoder().encodeToString(pdfBytes);
+            byte[] fileBytes = Files.readAllBytes(Paths.get(filePath));
+            String base64EncodedFile = Base64.getEncoder().encodeToString(fileBytes);
             logger.info("Reporte de pedidos generado correctamente.");
-            logger.info(reportePDF.toString());
             eliminarArchivo(filePath);
 
-            respond("{\"file\": \"" + base64EncodedPdf + "\"}")
+            respond("{\"file\": \"" + base64EncodedFile + "\"}")
                     .contentType("application/json")
                     .status(200);
         } catch (Exception e) {
@@ -61,19 +62,23 @@ public class ReporteController extends AppController {
 
     @GET
     public void generarReporteUsuarios() {
-        String filePath = "reporte_usuarios.pdf";
-        System.out.println("Solicitud recibida para generar reporte de usuarios");
-        try {
-            ReportePDF reportePDF = new ReportePDF();
-            reportePDF.generarReportePDFUsuarios();
+        String formato = param("formato");
+        String tipo = "usuarios"; // 🔹 Definimos tipo correctamente
+        String extension = formato.equalsIgnoreCase("excel") ? "xlsx" : "pdf";
+        String filePath = "reporte_" + tipo + "." + extension;
 
-            byte[] pdfBytes = Files.readAllBytes(Paths.get("reporte_usuarios.pdf"));
-            String base64EncodedPdf = Base64.getEncoder().encodeToString(pdfBytes);
+        System.out.println("Generando reporte de usuarios en formato " + formato.toUpperCase());
+
+        try {
+            ReporteService reporteService = new ReporteService();
+            reporteService.generarReporteUsuarios(formato);
+
+            byte[] fileBytes = Files.readAllBytes(Paths.get(filePath));
+            String base64EncodedFile = Base64.getEncoder().encodeToString(fileBytes);
             logger.info("Reporte de usuarios generado correctamente.");
-            logger.info(reportePDF.toString());
             eliminarArchivo(filePath);
 
-            respond("{\"file\": \"" + base64EncodedPdf + "\"}")
+            respond("{\"file\": \"" + base64EncodedFile + "\"}")
                     .contentType("application/json")
                     .status(200);
         } catch (Exception e) {
@@ -88,21 +93,23 @@ public class ReporteController extends AppController {
     public void generarReporteGastos() {
         String fechaInicio = param("fechaInicio");
         String fechaFin = param("fechaFin");
-        String filePath = "reporte_gastos.pdf";
+        String formato = param("formato");
+        String tipo = "gastos";
+        String extension = formato.equalsIgnoreCase("excel") || formato.equalsIgnoreCase("xlsx") ? "xlsx" : "pdf";
+        String filePath = "reporte_" + tipo + "." + extension;
 
-        System.out.println("Generando reporte de gastos desde " + fechaInicio + " hasta " + fechaFin);
+        System.out.println("Generando reporte de gastos en formato " + formato.toUpperCase());
 
         try {
-            ReportePDF reportePDF = new ReportePDF();
-            reportePDF.generarReportePDFGastos(fechaInicio, fechaFin);
+            ReporteService reporteService = new ReporteService();
+            reporteService.generarReporteGastos(fechaInicio, fechaFin, formato);
 
-            byte[] pdfBytes = Files.readAllBytes(Paths.get("reporte_gastos.pdf"));
-            String base64EncodedPdf = Base64.getEncoder().encodeToString(pdfBytes);
-            logger.info(reportePDF.toString());
+            byte[] fileBytes = Files.readAllBytes(Paths.get(filePath));
+            String base64EncodedFile = Base64.getEncoder().encodeToString(fileBytes);
             logger.info("Reporte de gastos generado correctamente.");
             eliminarArchivo(filePath);
-            
-            respond("{\"file\": \"" + base64EncodedPdf + "\"}")
+
+            respond("{\"file\": \"" + base64EncodedFile + "\"}")
                     .contentType("application/json")
                     .status(200);
         } catch (Exception e) {

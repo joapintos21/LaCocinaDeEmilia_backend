@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import app.models.Categoria;
+import app.models.DescuentoCategoria;
 import app.models.Producto;
 
 public class CategoriasController extends AppController {
@@ -139,6 +140,56 @@ public class CategoriasController extends AppController {
         } else {
             logger.error("Categoría no encontrada. ON listarProductosCategoria");
             respond("{\"error\": \"Categoría no encontrada\"}").contentType("application/json").status(404);
+        }
+    }
+
+    @POST
+    public void crearDescuento() {
+        try {
+            JSONObject body = new JSONObject(getRequestString());
+            int categoriaId = body.getInt("categoria_id");
+            int descuentoId = body.getInt("descuento_id");
+
+            DescuentoCategoria descuentoCategoria = new DescuentoCategoria();
+            descuentoCategoria.set("categoria_id", categoriaId);
+            descuentoCategoria.set("descuento_id", descuentoId);
+
+            if (descuentoCategoria.saveIt()) {
+                logger.info("Descuento asociado a categoria: " + descuentoCategoria.toString());
+                respond(descuentoCategoria.toJson().toString()).contentType("application/json").status(201);
+            } else {
+                logger.error(descuentoCategoria.errors().toString());
+                respond(descuentoCategoria.errors().toJSON()).contentType("application/json").status(400);
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
+        }
+    }
+
+    @POST
+    public void quitarDescuento() {
+        try {
+            JSONObject body = new JSONObject(getRequestString());
+            int descuentoId = body.getInt("descuento_id");
+
+            DescuentoCategoria descuentoCategoria = DescuentoCategoria.findFirst("descuento_id = ?", descuentoId);
+            if (descuentoCategoria != null) {
+                if (descuentoCategoria.delete()) {
+                    logger.info("Descuento eliminado de categoria: " + descuentoCategoria.toString());
+                    respond("{\"message\": \"Descuento eliminado correctamente.\"}").contentType("application/json")
+                            .status(200);
+                } else {
+                    logger.error(descuentoCategoria.errors().toString());
+                    respond(descuentoCategoria.errors().toJSON()).contentType("application/json").status(400);
+                }
+            } else {
+                logger.error("Descuento no encontrado. ON DELETE");
+                respond("{\"error\": \"Descuento no encontrado.\"}").contentType("application/json").status(404);
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            respond("{\"error\": \"" + e.getMessage() + "\"}").contentType("application/json").status(500);
         }
     }
 }

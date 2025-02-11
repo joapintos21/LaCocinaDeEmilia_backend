@@ -17,15 +17,19 @@ import app.models.PedidoPack;
 import app.models.PedidoProducto;
 import app.models.PedidoProductoAdicional;
 import app.models.Producto;
+import app.models.Usuario;
 
 public class CarritoController extends AppController {
     private static final Logger logger = LogManager.getLogger(CarritoController.class);
+
     @POST
     public void agregarProductoACarrito(CarritoRequest carritoRequest) {
         int userId = carritoRequest.getUserId();
         int productoId = carritoRequest.getProductoId();
         int cantidad = carritoRequest.getCantidad();
         int adicionalId = carritoRequest.getAdicionalId();
+        int userIdFromToken = (Integer) appContext().get("userId");
+        int rolIdFromToken = (Integer) appContext().get("rolId");
 
         // Buscar el ID del estado 'EN_PROGRESO'
         EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
@@ -35,13 +39,17 @@ public class CarritoController extends AppController {
                     .contentType("application/json").status(500);
             return;
         }
-
         Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
         if (cliente == null) {
-            logger.error("Cliente no encontrado. ON agregarProductoACarrito");
-            respond("{\"error\": \"Cliente no encontrado\"}")
-                    .contentType("application/json").status(404);
-            return;
+            if (rolIdFromToken == 1) {
+                Usuario user = Usuario.findFirst("email = ?", "generico@cliente.com");
+                cliente = Cliente.findFirst("usuario_id = ?", user.getId());
+            } else {
+                logger.error("Cliente no encontrado. ON agregarProductoACarrito");
+                respond("{\"error\": \"Cliente no encontrado\"}")
+                        .contentType("application/json").status(404);
+                return;
+            }
         }
 
         Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?", cliente.getId(), estadoEnProgreso.getId());
@@ -54,6 +62,12 @@ public class CarritoController extends AppController {
             pedido.saveIt();
         }
 
+        if (!pedido.isOwner(userIdFromToken) && rolIdFromToken != 1) {
+            logger.error("Usuario logueado no es dueño de este pedido. ON agregarProductoACarrito");
+            respond("{\"error\": \"No tiene permisos para realizar esta accion.\"}")
+                    .contentType("application/json").status(401);
+            return;
+        }
         // Verificar si el producto ya está en el pedido (con o sin adicional)
         List<PedidoProducto> pedidoProductos = PedidoProducto.find("pedido_id = ? AND producto_id = ?", pedido.getId(),
                 productoId);
@@ -123,6 +137,8 @@ public class CarritoController extends AppController {
         int productoId = carritoRequest.getProductoId();
         int cantidadQuitar = carritoRequest.getCantidad();
         int adicionalId = carritoRequest.getAdicionalId(); // Campo para identificar el adicional
+        int userIdFromToken = (Integer) appContext().get("userId");
+        int rolIdFromToken = (Integer) appContext().get("rolId");
 
         // Buscar el estado 'EN_PROGRESO'
         EstadoPedido estadoEnProgreso = EstadoPedido.findFirst("nombre = ?", "EN_PROGRESO");
@@ -135,12 +151,16 @@ public class CarritoController extends AppController {
 
         Cliente cliente = Cliente.findFirst("usuario_id = ?", userId);
         if (cliente == null) {
-            logger.error("Cliente no encontrado. ON quitarProductoCarrito");
-            respond("{\"error\": \"Cliente no encontrado\"}")
-                    .contentType("application/json").status(404);
-            return;
+            if (rolIdFromToken == 1) {
+                Usuario user = Usuario.findFirst("email = ?", "generico@cliente.com");
+                cliente = Cliente.findFirst("usuario_id = ?", user.getId());
+            } else {
+                logger.error("Cliente no encontrado. ON agregarProductoACarrito");
+                respond("{\"error\": \"Cliente no encontrado\"}")
+                        .contentType("application/json").status(404);
+                return;
+            }
         }
-
         Pedido pedido = Pedido.findFirst("cliente_id = ? AND estado = ?", cliente.getId(), estadoEnProgreso.getId());
         if (pedido == null) {
             logger.error("Pedido no encontrado. ON quitarProductoCarrito");
@@ -148,7 +168,12 @@ public class CarritoController extends AppController {
                     .contentType("application/json").status(404);
             return;
         }
-
+        if (!pedido.isOwner(userIdFromToken) && rolIdFromToken != 1) {
+            logger.error("Usuario logueado no es dueño de este pedido. ON agregarProductoACarrito");
+            respond("{\"error\": \"No tiene permisos para realizar esta accion.\"}")
+                    .contentType("application/json").status(401);
+            return;
+        }
         // Buscar todos los PedidoProducto relacionados al productoId
         List<PedidoProducto> pedidoProductos = PedidoProducto.find("pedido_id = ? AND producto_id = ?", pedido.getId(),
                 productoId);
@@ -174,7 +199,8 @@ public class CarritoController extends AppController {
 
                     if (cantidadQuitar >= cantidadActual) {
                         // Eliminar adicional y PedidoProducto si la cantidad a quitar es mayor o igual
-                        logger.info("Adicional eliminado en pedido: " + pedidoAdicional.toString() + " Producto eliminado  en pedido: " + pedidoProducto.toString());
+                        logger.info("Adicional eliminado en pedido: " + pedidoAdicional.toString()
+                                + " Producto eliminado  en pedido: " + pedidoProducto.toString());
                         pedidoAdicional.delete();
                         pedidoProducto.delete();
                     } else {
@@ -185,10 +211,12 @@ public class CarritoController extends AppController {
                     }
 
                     // Actualizar el total del pedido
+                    Producto producto = Producto.findById(productoId);
                     Adicional adicional = Adicional.findById(adicionalId);
                     double costoAdicional = adicional != null ? adicional.getDouble("costoAdicional") : 0.0;
                     double nuevoTotal = pedido.getDouble("total")
-                            - (costoAdicional * Math.min(cantidadQuitar, cantidadActual));
+                            - (costoAdicional * Math.min(cantidadQuitar, cantidadActual))
+                            - (producto.getDouble("precio") * Math.min(cantidadQuitar, cantidadActual));
                     pedido.set("total", Math.max(nuevoTotal, 0.0)); // Evitar total negativo
                     logger.info("Actualizacion de total del pedido: " + pedido.toString());
                     pedido.saveIt();

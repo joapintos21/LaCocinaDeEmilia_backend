@@ -27,14 +27,31 @@ public class Pedido extends Model {
     public JSONObject toJson() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", get("id"));
+        Cliente c = parent(Cliente.class);
+        Usuario user = Usuario.findById(c.get("usuario_id"));
         jsonObject.put("cliente_id", get("cliente_id"));
+        jsonObject.put("cliente_nombre", user.get("nombre"));
+        jsonObject.put("cliente_telefono", user.get("telefono"));
         jsonObject.put("estado", get("estado"));
         jsonObject.put("metodo_pago", get("metodo_pago"));
+        Pago pago = Pago.findFirst("pedido_id = ?", this.getId());
+        if (pago != null) {
+            jsonObject.put("estado_pago", pago.get("estado_pago"));
+        }
         jsonObject.put("total", get("total"));
         jsonObject.put("fechaCreacion", get("fechaCreacion"));
         jsonObject.put("fecha_entrega", get("fecha_entrega"));
-        jsonObject.put("cocinera_asignada", get("cocinera_asignada"));
+        Usuario cocinero = Usuario.findById(this.get("cocinera_asignada"));
+        if (cocinero != null) {
+            jsonObject.put("cocinera_asignada", get("cocinera_asignada"));
+            jsonObject.put("cocinera_nombre", cocinero.get("nombre"));
+        }
+        Envio envio = Envio.findFirst("pedido_id = ?", this.get("id"));
+        if (envio != null) {
+            jsonObject.put("notas_cadete", envio.get("notascadete"));
+        }
         jsonObject.put("cadete_asignado", get("cadete_asignado"));
+        jsonObject.put("retiro_local", get("retiro_local"));
         return jsonObject;
     }
 
@@ -145,9 +162,11 @@ public class Pedido extends Model {
 
         // Agregar detalle para el envío, si aplica
         if (costoEnvio != null && costoEnvio.compareTo(BigDecimal.ZERO) > 0) {
+            Envio envio = Envio.findFirst("pedido_id = ?", this.getId());
+            Direccion direccion = Direccion.findFirst("id = ?", envio.get("direccion_id"));
             PedidoDetalle envioDetalle = new PedidoDetalle();
             envioDetalle.set("pedido_id", this.getId());
-            envioDetalle.set("descripcion", "Envío");
+            envioDetalle.set("descripcion", "Envío: " + direccion.get("direccion"));
             envioDetalle.set("cantidad", 1); // Siempre 1 para servicios como envío
             envioDetalle.set("precio_unitario", costoEnvio);
             envioDetalle.set("subtotal", costoEnvio);
@@ -167,7 +186,27 @@ public class Pedido extends Model {
             comisionDetalle.saveIt();
             total = total.add(com);
         }
+        // Agregar detalle para cupon, si aplica
+        CuponNutricionista cupon = CuponNutricionista.findFirst("id = ?", this.get("cupon_id"));
+        if (cupon != null) {
+            Descuento desc = Descuento.findFirst("id = ?", cupon.get("descuento_id"));
+            PedidoDetalle cuponDetalle = new PedidoDetalle();
+            BigDecimal com = total.multiply(desc.getBigDecimal("valor"));
+            cuponDetalle.set("pedido_id", this.getId());
+            cuponDetalle.set("descripcion", "Cupon: " + cupon.getString("codigo"));
+            cuponDetalle.set("cantidad", 1); // Siempre 1 para servicios como comisión
+            cuponDetalle.set("precio_unitario", com.negate());
+            cuponDetalle.set("subtotal", com.negate());
+            cuponDetalle.saveIt();
+            total = total.subtract(com);
+        }
         this.set("total", total);
+    }
+
+    // Validate if the logged-in user is the owner of the current pedido
+    public boolean isOwner(int userId) {
+        Cliente c = parent(Cliente.class);
+        return c.getInteger("usuario_id") == userId;
     }
 
 }
